@@ -31,21 +31,22 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
    ```bash
    git clone https://github.com/numair-2003/AIML-Internship-NumairFahad.git
 
-📊 Cleaned Dataset
-A cleaned version of the employee dataset has been created after performing:
+## 📊 Cleaned Dataset
 
--Inspection of the dataset
--Handling missing values
--Removing duplicates
--Standardizing text
--Fixing data types
--Detecting outliers
+A cleaned version of the employee dataset has been created after performing the following steps:
 
-File: [employee_records_clean.csv]([url](https://github.com/numair-2003/AIML-Internship-NumairFahad/blob/main/employee_records_clean.csv))
+- Inspection of the provided messy employee dataset
+- Handling missing values
+- Removing duplicates
+- Standardizing inconsistent text
+- Fixing incorrect data types
+- Detecting outliers
 
-👨‍💻 Author
+**File:** `employee_records_clean.csv`
 
-Name: Numair Fahad
-Role: AI/ML Intern
-Company: Zynvex Solutions
-GitHub: numair-2003
+## 👨‍💻 Author
+
+- **Name:** Numair Fahad
+- **Role:** AI/ML Intern
+- **Company:** Zynvex Solutions
+- **GitHub:** [numair-2003](https://github.com/numair-2003)
