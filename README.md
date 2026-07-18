@@ -4,13 +4,12 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 ## 📂 Repository Contents
 
-| Lab | Topic                              | Status       | Files |
-|-----|------------------------------------|--------------|-------|
-| Lab 1 | Introduction to Python & Colab     | Completed    | - |
-| Lab 2 | NumPy & Pandas Basics              | Completed    | `Lab2_NumairFahad.ipynb` |
-| Lab 3 | Data Cleaning & Preprocessing      | Completed    | `Lab3_NumairFahad.ipynb`, `employee_records_clean.csv` |
-| Lab 4 | Data Visualization                 | In Progress  | - |
-| Lab 5 | Exploratory Data Analysis          | Pending      | - |
+| Lab | Topic                                      | Status       | Key Files |
+|-----|--------------------------------------------|--------------|-----------|
+| Lab 2 | NumPy & Pandas Basics                      | Completed    | `Lab2_NumairFahad.ipynb` |
+| Lab 3 | Data Cleaning & Preprocessing              | Completed    | `Lab3_NumairFahad.ipynb`, `employee_records_clean.csv` |
+| Lab 4 | Data Visualization with Matplotlib & Seaborn | Completed  | `Lab4_NumairFahad.ipynb`, `titanic.csv` |
+| Assignment 1 | Exploratory Data Analysis (EDA)            | In Progress  | - |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -25,25 +24,36 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 ---
 
+## 📊 Cleaned Dataset
+
+### Employee Records Dataset
+- **`employee_records_clean.csv`** — A cleaned version of the messy employee dataset after performing:
+  - Inspection of the dataset.
+  - Handling missing values (`Age` with median, `Salary` with mean).
+  - Removing duplicate rows.
+  - Standardizing inconsistent text (employee names and department names).
+  - Splitting `Department_Region` into two independent `Department` and `Region` columns.
+  - Fixing incorrect data types (especially the `Phone` column).
+  - Detecting and handling outliers using the IQR method.
+
+### Titanic Dataset
+- **`titanic.csv`** — The classic Titanic passenger dataset used for data visualization and exploratory analysis. The following tasks were performed on this dataset:
+
+  - Inspected the dataset structure using `df.info()` and `df.describe()`.
+  - Separated numeric and categorical columns using `select_dtypes()`.
+  - Created a **histogram** to visualize the distribution of passenger ages.
+  - Created a **bar chart** to show the number of passengers in each class.
+  - Created a **box plot** to compare fare distribution across passenger classes.
+  - Created a **correlation heatmap** to explore relationships between distinct numerical variables.
+  - Built a **scatter plot** of Age vs Fare colored by survival status.
+  - Analyzed survival rates by grouping data on `Pclass` and `Sex`.
+
 ## 🚀 How to Use
 
 1. Clone this repository:
    ```bash
    git clone https://github.com/numair-2003/AIML-Internship-NumairFahad.git
-
-## 📊 Cleaned Dataset
-
-A cleaned version of the employee dataset has been created after performing the following steps:
-
-- Inspection of the provided messy employee dataset
-- Handling missing values
-- Removing duplicates
-- Standardizing inconsistent text
-- Fixing incorrect data types
-- Detecting outliers
-
-**File:** `employee_records_clean.csv`
-
+   
 ## 👨‍💻 Author
 
 - **Name:** Numair Fahad
