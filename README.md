@@ -4,15 +4,13 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 ## 📂 Repository Contents
 
-This repository includes all the labs and assignments completed during the internship:
-
-| Lab No. | Topic                              | Notebook File                  | Status     |
-|---------|------------------------------------|--------------------------------|------------|
-| Lab 1   | Introduction to Python & Colab     | -                              | Completed  |
-| Lab 2   | NumPy Basics & Operations          | Lab2_NumairFahad.ipynb         | Completed  |
-| Lab 3   | Data Cleaning & Preprocessing      | -                              | In Progress|
-| Lab 4   | Data Visualization                 | -                              | In Progress|
-| Assignment 1   | Exploratory Data Analysis (EDA)    | -                       | Pending    |
+| Lab | Topic                              | Status       | Files |
+|-----|------------------------------------|--------------|-------|
+| Lab 1 | Introduction to Python & Colab     | Completed    | - |
+| Lab 2 | NumPy & Pandas Basics              | Completed    | `Lab2_NumairFahad.ipynb` |
+| Lab 3 | Data Cleaning & Preprocessing      | Completed    | `Lab3_NumairFahad.ipynb`, `employee_records_clean.csv` |
+| Lab 4 | Data Visualization                 | In Progress  | - |
+| Lab 5 | Exploratory Data Analysis          | Pending      | - |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -32,3 +30,22 @@ This repository includes all the labs and assignments completed during the inter
 1. Clone this repository:
    ```bash
    git clone https://github.com/numair-2003/AIML-Internship-NumairFahad.git
+
+📊 Cleaned Dataset
+A cleaned version of the employee dataset has been created after performing:
+
+-Inspection of the dataset
+-Handling missing values
+-Removing duplicates
+-Standardizing text
+-Fixing data types
+-Detecting outliers
+
+File: [employee_records_clean.csv]([url](https://github.com/numair-2003/AIML-Internship-NumairFahad/blob/main/employee_records_clean.csv))
+
+👨‍💻 Author
+
+Name: Numair Fahad
+Role: AI/ML Intern
+Company: Zynvex Solutions
+GitHub: numair-2003
