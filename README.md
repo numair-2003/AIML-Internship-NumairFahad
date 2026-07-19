@@ -26,7 +26,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 ## 📊 Cleaned Dataset
 
-### Employee Records Dataset
+### Lab 03 - Employee Records Dataset
 
 - **`employee_records_clean.csv`** — A cleaned version of the messy employee dataset after performing:
   - Inspection of the dataset.
@@ -37,7 +37,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Fixing incorrect data types (especially the `Phone` column).
   - Detecting and handling outliers using the IQR method.
 
-### Titanic Dataset
+### Lab 04 - Titanic Dataset
 
 - **`titanic.csv`** — The classic Titanic passenger dataset used for data visualization and exploratory analysis. The following tasks were performed on this dataset:
 
@@ -50,7 +50,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Built a **scatter plot** of Age vs Fare colored by survival status.
   - Analyzed survival rates by grouping data on `Pclass` and `Sex`.
 
-### NYC Airbnb Dataset
+### Assignment 01 - NYC Airbnb Dataset
 
 - **`new_york_airbnb_cleaned.csv`** — Cleaned version of the New York City Airbnb listings dataset.  
   Work performed includes:
