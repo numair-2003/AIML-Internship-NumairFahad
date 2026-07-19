@@ -4,12 +4,12 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 ## 📂 Repository Contents
 
-| Lab | Topic                                      | Status       | Key Files |
-|-----|--------------------------------------------|--------------|-----------|
-| Lab 2 | NumPy & Pandas Basics                      | Completed    | `Lab2_NumairFahad.ipynb` |
-| Lab 3 | Data Cleaning & Preprocessing              | Completed    | `Lab3_NumairFahad.ipynb`, `employee_records_clean.csv` |
-| Lab 4 | Data Visualization with Matplotlib & Seaborn | Completed  | `Lab4_NumairFahad.ipynb`, `titanic.csv` |
-| Assignment 1 | Exploratory Data Analysis (EDA)            | In Progress  | - |
+| Lab / Assignment | Topic                                      | Status       | Key Files |
+|------------------|--------------------------------------------|--------------|-----------|
+| Lab 2            | NumPy & Pandas Basics                      | Completed    | `Lab2_NumairFahad.ipynb` |
+| Lab 3            | Data Cleaning & Preprocessing              | Completed    | `Lab3_NumairFahad.ipynb`, `employee_records_clean.csv` |
+| Lab 4            | Data Visualization with Matplotlib & Seaborn | Completed  | `Lab4_NumairFahad.ipynb`, `titanic.csv` |
+| Assignment 01    | Comprehensive EDA on NYC Airbnb Listings   | Completed    | `Assignment01_Airbnb_EDA.ipynb`, `new_york_airbnb_cleaned.csv` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -47,6 +47,15 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Created a **correlation heatmap** to explore relationships between distinct numerical variables.
   - Built a **scatter plot** of Age vs Fare colored by survival status.
   - Analyzed survival rates by grouping data on `Pclass` and `Sex`.
+
+### NYC Airbnb Dataset
+- **`new_york_airbnb_cleaned.csv`** — Cleaned version of the New York City Airbnb listings dataset.  
+  Work performed includes:
+  - Handling missing values
+  - Removing outliers in `price` and `minimum_nights`
+  - Feature engineering (`price_category`)
+  - Univariate, bivariate, and multivariate analysis
+  - Key insights and actionable recommendation
 
 ## 🚀 How to Use
 
