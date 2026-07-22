@@ -10,6 +10,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 3            | Data Cleaning & Preprocessing              | Completed    | `Lab3_NumairFahad.ipynb`, `employee_records_clean.csv` |
 | Lab 4            | Data Visualization with Matplotlib & Seaborn | Completed  | `Lab4_NumairFahad.ipynb`, `titanic.csv` |
 | Assignment 01    | Comprehensive EDA on NYC Airbnb Listings   | Completed    | `Assignment01_Airbnb_EDA.ipynb`, `new_york_airbnb_cleaned.csv` |
+| Lab 6            | Train-Test Split & Feature Scaling         | Completed    | `Lab 06_NumairFahad.ipynb` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -18,7 +19,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 ## 🛠️ Technologies & Tools
 
 - **Programming Language**: Python
-- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn
+- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn
 - **Environment**: Google Colab, Jupyter Notebook, VS Code
 - **Version Control**: Git & GitHub
 
@@ -59,6 +60,14 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Feature engineering (`price_category`)
   - Univariate, bivariate, and multivariate analysis
   - Key insights and actionable recommendation
+
+### Lab 06 - Iris Dataset
+
+- Used the classic Iris dataset from scikit-learn to practice:
+  - Train-Test Split (~75%-25%)
+  - Feature Scaling with `StandardScaler`
+  - Verifying scaled data (mean ≈ 0, std ≈ 1)
+  - Understanding the proper ML workflow (`.fit_transform()` on train, `.transform()` on test)
 
 ## 🚀 How to Use
 
