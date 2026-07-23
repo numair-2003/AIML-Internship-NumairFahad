@@ -11,6 +11,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 4            | Data Visualization with Matplotlib & Seaborn | Completed  | `Lab4_NumairFahad.ipynb`, `titanic.csv` |
 | Assignment 01    | Comprehensive EDA on NYC Airbnb Listings   | Completed    | `Assignment01_Airbnb_EDA.ipynb`, `new_york_airbnb_cleaned.csv` |
 | Lab 6            | Train-Test Split & Feature Scaling         | Completed    | `Lab 06_NumairFahad.ipynb` |
+| Lab 7            | Regression Models                          | Completed    | `Lab 07_NumairFahad.ipynb` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -68,6 +69,15 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Feature Scaling with `StandardScaler`
   - Verifying scaled data (mean ≈ 0, std ≈ 1)
   - Understanding the proper ML workflow (`.fit_transform()` on train, `.transform()` on test)
+
+### California Housing Dataset
+
+- Built and evaluated regression models:
+  - Simple Linear Regression
+  - Multiple Linear Regression
+  - Polynomial Regression
+  - Model evaluation using MSE, RMSE and R² Score
+  - Feature coefficient analysis
 
 ## 🚀 How to Use
 
