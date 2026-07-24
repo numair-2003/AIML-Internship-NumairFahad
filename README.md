@@ -12,6 +12,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Assignment 01    | Comprehensive EDA on NYC Airbnb Listings   | Completed    | `Assignment01_Airbnb_EDA.ipynb`, `new_york_airbnb_cleaned.csv` |
 | Lab 6            | Train-Test Split & Feature Scaling         | Completed    | `Lab 06_NumairFahad.ipynb` |
 | Lab 7            | Regression Models                          | Completed    | `Lab 07_NumairFahad.ipynb` |
+| Lab 8            | Classification Models                      | Completed    | `Lab 08_NumairFahad.ipynb` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -62,15 +63,17 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Univariate, bivariate, and multivariate analysis
   - Key insights and actionable recommendation
 
-### Lab 06 - Iris Dataset
+### Labs 06 & 08 - Iris Dataset
 
 - Used the classic Iris dataset from scikit-learn to practice:
   - Train-Test Split (~75%-25%)
   - Feature Scaling with `StandardScaler`
   - Verifying scaled data (mean ≈ 0, std ≈ 1)
   - Understanding the proper ML workflow (`.fit_transform()` on train, `.transform()` on test)
+  - Classification models: Logistic Regression, K-Nearest Neighbors (KNN), Decision Tree
+  - Model comparison, hyperparameter tuning, and tree visualization
 
-### California Housing Dataset
+### Lab 07 - California Housing Dataset
 
 - Built and evaluated regression models:
   - Simple Linear Regression
