@@ -13,6 +13,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 6            | Train-Test Split & Feature Scaling         | Completed    | `Lab 06_NumairFahad.ipynb` |
 | Lab 7            | Regression Models                          | Completed    | `Lab 07_NumairFahad.ipynb` |
 | Lab 8            | Classification Models                      | Completed    | `Lab 08_NumairFahad.ipynb` |
+| Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -21,7 +22,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 ## 🛠️ Technologies & Tools
 
 - **Programming Language**: Python
-- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn
+- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn, joblib
 - **Environment**: Google Colab, Jupyter Notebook, VS Code
 - **Version Control**: Git & GitHub
 
@@ -81,6 +82,15 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Polynomial Regression
   - Model evaluation using MSE, RMSE and R² Score
   - Feature coefficient analysis
+
+### Assignment 02 - Insurance Cost Prediction Dataset
+
+- `insurance_model.joblib` — A trained and saved regression model built on the Medical Insurance Cost dataset. Work performed includes:
+  - Data loading, exploration, and skewness analysis of the target variable (`charges`)
+  - Feature engineering: encoding categorical columns, creating `bmi_category` and `smoker_age_interaction`, log-transforming the target, and scaling numeric features
+  - Built and compared three regression models: Simple Linear Regression, Multiple Linear Regression, and Polynomial Regression
+  - Model evaluation using R² Score, MAE, MSE, RMSE, and 5-fold cross-validation
+  - Model selection, coefficient interpretation, and lightweight deployment via a `predict_insurance_cost()` function
 
 ## 🚀 How to Use
 
