@@ -13,6 +13,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 6            | Train-Test Split & Feature Scaling         | Completed    | `Lab 06_NumairFahad.ipynb` |
 | Lab 7            | Regression Models                          | Completed    | `Lab 07_NumairFahad.ipynb` |
 | Lab 8            | Classification Models                      | Completed    | `Lab 08_NumairFahad.ipynb` |
+| Lab 9            | Model Evaluation & Metrics                 | Completed    | `Lab 09_NumairFahad.ipynb` |
 | Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 
 > More labs and assignments will be added as the internship progresses.
@@ -41,7 +42,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Fixing incorrect data types (especially the `Phone` column).
   - Detecting and handling outliers using the IQR method.
 
-### Lab 04 - Titanic Dataset
+### Labs 04 & 09 - Titanic Dataset
 
 - **`titanic.csv`** — The classic Titanic passenger dataset used for data visualization and exploratory analysis. The following tasks were performed on this dataset:
 
@@ -53,6 +54,9 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Created a **correlation heatmap** to explore relationships between distinct numerical variables.
   - Built a **scatter plot** of Age vs Fare colored by survival status.
   - Analyzed survival rates by grouping data on `Pclass` and `Sex`.
+  - Trained classification models (Logistic Regression, KNN, Decision Tree).
+  - Evaluated models using **Confusion Matrix**, **Precision**, **Recall**, **F1-Score**, **ROC-AUC**, and **Cross-Validation**.
+  - Analyzed the effect of changing the decision threshold on precision and recall.
 
 ### Assignment 01 - NYC Airbnb Dataset
 
