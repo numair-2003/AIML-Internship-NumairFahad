@@ -14,6 +14,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 7            | Regression Models                          | Completed    | `Lab 07_NumairFahad.ipynb` |
 | Lab 8            | Classification Models                      | Completed    | `Lab 08_NumairFahad.ipynb` |
 | Lab 9            | Model Evaluation & Metrics                 | Completed    | `Lab 09_NumairFahad.ipynb` |
+| Lab 10           | Feature Engineering                        | Completed    | `Lab 10_NumairFahad.ipynb`, `tips.csv` |
 | Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 
 > More labs and assignments will be added as the internship progresses.
@@ -86,6 +87,14 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Polynomial Regression
   - Model evaluation using MSE, RMSE and R² Score
   - Feature coefficient analysis
+
+### Lab 10 - Tips Dataset
+
+- Feature engineering practice on restaurant bill data
+- Encoding categorical variables (sex, smoker, day, time)
+- Creating derived features (`bill_per_person`, `tip_percentage`, `is_weekend`)
+- Binning continuous variables
+- Feature scaling and correlation-based feature selection
 
 ### Assignment 02 - Insurance Cost Prediction Dataset
 
