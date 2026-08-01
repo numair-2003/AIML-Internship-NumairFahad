@@ -16,6 +16,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 9            | Model Evaluation & Metrics                 | Completed    | `Lab 09_NumairFahad.ipynb` |
 | Lab 10           | Feature Engineering                        | Completed    | `Lab 10_NumairFahad.ipynb`, `tips.csv` |
 | Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
+| Lab 11           | Neural Network Fundamentals                | Completed    | `Lab 11_NumairFahad.ipynb`, `wine.csv` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -24,7 +25,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 ## 🛠️ Technologies & Tools
 
 - **Programming Language**: Python
-- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn, joblib
+- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn, joblib, TensorFlow/Keras
 - **Environment**: Google Colab, Jupyter Notebook, VS Code
 - **Version Control**: Git & GitHub
 
@@ -104,6 +105,13 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
   - Built and compared three regression models: Simple Linear Regression, Multiple Linear Regression, and Polynomial Regression
   - Model evaluation using R² Score, MAE, MSE, RMSE, and 5-fold cross-validation
   - Model selection, coefficient interpretation, and lightweight deployment via a `predict_insurance_cost()` function
+
+### Lab 11 - Wine Dataset
+
+- Neural network fundamentals from scratch using NumPy
+- Manual implementation of a single neuron, forward pass, activation functions (ReLU, Sigmoid, Tanh)
+- Loss calculation (MSE & Binary Cross-Entropy)
+- Gradient descent steps and loss visualization
 
 ## 🚀 How to Use
 
