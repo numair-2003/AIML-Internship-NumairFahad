@@ -17,6 +17,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 10           | Feature Engineering                        | Completed    | `Lab 10_NumairFahad.ipynb`, `tips.csv` |
 | Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 | Lab 11           | Neural Network Fundamentals                | Completed    | `Lab 11_NumairFahad.ipynb`, `wine.csv` |
+| Assignment 03    | Customer Churn Prediction (Deep Learning)  | Completed    | `Assignment3_NumairFahad.ipynb`, `churn_model.keras`, `WA_Fn-UseC_-Telco-Customer-Churn.csv` |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -112,6 +113,14 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 - Manual implementation of a single neuron, forward pass, activation functions (ReLU, Sigmoid, Tanh)
 - Loss calculation (MSE & Binary Cross-Entropy)
 - Gradient descent steps and loss visualization
+
+### Assignment 03 - Telco Customer Churn Dataset
+
+- End-to-end deep learning project for customer churn prediction
+- Data cleaning, encoding, scaling, and handling class imbalance
+- Baseline Keras neural network and model tuning using Dropout and Early Stopping
+- Proper model evaluation using Precision, Recall, F1-Score, and Confusion Matrix
+- Saved and reused the trained model for predictions
 
 ## 🚀 How to Use
 
