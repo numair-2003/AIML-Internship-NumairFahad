@@ -17,6 +17,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 10           | Feature Engineering                        | Completed    | `Lab 10_NumairFahad.ipynb`, `tips.csv` |
 | Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 | Lab 11           | Neural Network Fundamentals                | Completed    | `Lab 11_NumairFahad.ipynb`, `wine.csv` |
+| Lab 13           | Convolutional Neural Networks (CNNs)       | Completed    | `Lab 13_NumairFahad.ipynb`, `fashion_mnist_data/` |
 | Assignment 03    | Customer Churn Prediction (Deep Learning)  | Completed    | `Assignment3_NumairFahad.ipynb`, `churn_model.keras`, `WA_Fn-UseC_-Telco-Customer-Churn.csv` |
 
 > More labs and assignments will be added as the internship progresses.
@@ -113,6 +114,16 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 - Manual implementation of a single neuron, forward pass, activation functions (ReLU, Sigmoid, Tanh)
 - Loss calculation (MSE & Binary Cross-Entropy)
 - Gradient descent steps and loss visualization
+
+### Lab 13 - Fashion-MNIST Dataset (CNN)
+
+- `fashion_mnist_data/` — Fashion-MNIST training and test images saved as `.npy` files for offline use
+- Built Convolutional Neural Networks (CNNs) using Conv2D, MaxPooling2D, and Dropout layers
+- Compared CNN architectures by varying depth (number of conv blocks) and filter counts
+- Analyzed the effect of dropout rate on training/validation accuracy gap and overfitting
+- Evaluated per-class performance using `sklearn.metrics.classification_report`
+- Visualized misclassified images and training/validation loss & accuracy curves
+- Compared CNN's convolution and pooling approach to the Dense network from Lab 12
 
 ### Assignment 03 - Telco Customer Churn Dataset
 
