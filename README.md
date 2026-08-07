@@ -15,9 +15,10 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 8            | Classification Models                      | Completed    | `Lab 08_NumairFahad.ipynb` |
 | Lab 9            | Model Evaluation & Metrics                 | Completed    | `Lab 09_NumairFahad.ipynb` |
 | Lab 10           | Feature Engineering                        | Completed    | `Lab 10_NumairFahad.ipynb`, `tips.csv` |
-| Assignment 02 | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
+| Assignment 02    | Insurance Cost Prediction – End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 | Lab 11           | Neural Network Fundamentals                | Completed    | `Lab 11_NumairFahad.ipynb`, `wine.csv` |
 | Lab 13           | Convolutional Neural Networks (CNNs)       | Completed    | `Lab 13_NumairFahad.ipynb`, `fashion_mnist_data/` |
+| Lab 14           | Recurrent Neural Networks (SimpleRNN/LSTM/GRU) | Completed | `Lab 14_NumairFahad.ipynb`, `imdb_data/` |
 | Assignment 03    | Customer Churn Prediction (Deep Learning)  | Completed    | `Assignment3_NumairFahad.ipynb`, `churn_model.keras`, `WA_Fn-UseC_-Telco-Customer-Churn.csv` |
 
 > More labs and assignments will be added as the internship progresses.
@@ -125,6 +126,17 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 - Visualized misclassified images and training/validation loss & accuracy curves
 - Compared CNN's convolution and pooling approach to the Dense network from Lab 12
 
+## Lab 14 - IMDB Movie Reviews Dataset
+
+- `imdb_data/` — IMDB movie review sequences (padded) saved as `.npz` for offline use
+- Built Recurrent Neural Networks for binary sentiment classification (positive/negative) using Embedding, SimpleRNN, GRU, and LSTM layers
+- Compared SimpleRNN, GRU, and LSTM architectures on test accuracy and training time
+- Experimented with sequence length (`maxlen`) trade-offs between training time and accuracy
+- Built a custom stacked-LSTM architecture and trained on the full IMDB training set
+- Performed error analysis on misclassified reviews, decoding text back to words to inspect model failures
+- Predicted sentiment on a custom, hand-written review by encoding it into the model's word-index format
+- Compared RNN's sequential, order-dependent processing approach to the CNN's spatial approach from Lab 13
+  
 ### Assignment 03 - Telco Customer Churn Dataset
 
 - End-to-end deep learning project for customer churn prediction
