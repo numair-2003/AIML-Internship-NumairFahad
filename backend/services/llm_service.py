@@ -276,3 +276,65 @@ Key points:
         questions = json.loads(raw2)
 
     return questions
+
+
+def generate_flashcards(overview: str, key_points: list[str]) -> list[dict]:
+    """
+    Generate flashcards (front: term/concept, back: definition/explanation).
+
+    Returns list of {front, back}.
+    """
+    client = _get_client()
+
+    key_points_text = "\n".join(f"- {p}" for p in key_points)
+
+    prompt = f"""\
+Based on the following video summary and key points, generate 8-12 flashcards to help
+a student memorize and review the key concepts. Return ONLY valid JSON matching this
+schema, no other text:
+
+[
+  {{
+    "front": "Term or question on the front of the card",
+    "back": "Definition, explanation, or answer on the back of the card"
+  }}
+]
+
+Summary: {overview}
+Key points:
+{key_points_text}
+"""
+
+    response = client.messages.create(
+        model=settings.claude_model,
+        max_tokens=2000,
+        system="You are an expert educational flashcard creator. Generate clear, concise flashcards.",
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    raw = response.content[0].text.strip()
+    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+
+    try:
+        cards = json.loads(raw)
+    except json.JSONDecodeError:
+        retry_response = client.messages.create(
+            model=settings.claude_model,
+            max_tokens=2000,
+            system="You are an expert educational flashcard creator. Generate clear, concise flashcards.",
+            messages=[
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": raw},
+                {
+                    "role": "user",
+                    "content": "Your last response was not valid JSON. Return ONLY the JSON array, no other text.",
+                },
+            ],
+        )
+        raw2 = retry_response.content[0].text.strip()
+        raw2 = re.sub(r"^```(?:json)?\s*", "", raw2)
+        raw2 = re.sub(r"\s*```$", "", raw2)
+        cards = json.loads(raw2)
+
+    return cards

@@ -1,8 +1,13 @@
 import os
 import sys
 
-# Add the backend directory to the path
-sys.path.insert(0, os.path.dirname(__file__))
+# Ensure working directory is always the backend folder so that relative paths
+# (SQLite ./app.db, ChromaDB ./chroma_db, ./models/...) resolve correctly
+# regardless of whether Python is invoked with `cd backend && python main.py`
+# (development) or `python /abs/path/backend/main.py` (production).
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(_BACKEND_DIR)
+sys.path.insert(0, _BACKEND_DIR)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,6 +45,8 @@ async def health():
 @app.on_event("startup")
 async def startup():
     init_db()
+    from services.intent_service import load_model
+    load_model()
     print("LearnTube API started — database initialised.")
 
 
