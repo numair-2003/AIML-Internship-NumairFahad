@@ -3,8 +3,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    anthropic_api_key: str = os.environ.get("ANTHROPIC_API_KEY", "")
-    claude_model: str = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+    gemini_api_key: str = os.environ.get("GEMINI_API_KEY", "")
+    gemini_model: str = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
     embedding_model: str = os.environ.get(
         "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
     )

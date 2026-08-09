@@ -1,4 +1,4 @@
-- [LearnTube architecture](learntube-arch.md) — FastAPI backend at /api, React/Vite frontend at /, SQLite + ChromaDB, no PyTorch; Clerk auth added
+- [LearnTube architecture](learntube-arch.md) — FastAPI backend at /api, React/Vite frontend at /, SQLite + ChromaDB, no PyTorch; Clerk auth + Gemini LLM
 - [Clerk auth setup](clerk-auth-setup.md) — Replit-managed Clerk; PyJWT[crypto] installed via uv; proxy at /api/__clerk; JWT verification in backend/services/clerk_auth.py
 - [youtube-transcript-api v1.x breaking change](yt-transcript-api.md) — v1.x uses instance methods; get_transcript removed
 - [Python 3.13 type union syntax](py313-type-union.md) — X | None in module-level var annotations requires Optional[X] from typing

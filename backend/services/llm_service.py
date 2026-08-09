@@ -1,26 +1,28 @@
 """
-LLM service — all Anthropic Claude calls live here.
-Used by: RAG chat (Step 3), summary (Step 5), quiz (Step 6).
+LLM service — Google Gemini API calls live here (google-genai SDK).
+Used by: RAG chat (Step 3), summary (Step 5), quiz & flashcards (Step 6).
 """
 
 from typing import Optional
-import anthropic
+from google import genai
+from google.genai import types
 import json
 import re
 from config import settings
 from services.chunking_service import format_timestamp
 
-_client: Optional[anthropic.Anthropic] = None
+# Lazy singleton client
+_client: Optional[genai.Client] = None
 
 
-def _get_client() -> anthropic.Anthropic:
+def _get_client() -> genai.Client:
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        _client = genai.Client(api_key=settings.gemini_api_key)
     return _client
 
 
-# ── System prompts (from spec Section 8) ────────────────────────────────────
+# ── System prompts ────────────────────────────────────────────────────────────
 
 RAG_SYSTEM_PROMPT = """\
 You are an AI learning assistant helping a user understand a specific YouTube video.
@@ -44,29 +46,50 @@ QUIZ_SYSTEM_PROMPT = """\
 You are an expert quiz generator for educational content. Generate clear, fair quiz questions.\
 """
 
+FLASHCARD_SYSTEM_PROMPT = """\
+You are an expert educational flashcard creator. Generate clear, concise flashcards.\
+"""
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _strip_fences(text: str) -> str:
+    """Remove markdown code fences if present."""
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+    return text.strip()
+
 
 def _parse_citations(answer_text: str) -> list[dict]:
-    """
-    Extract [MM:SS] timestamp citations from the LLM's answer text.
-    Returns list of {timestamp_str, start_seconds}.
-    """
+    """Extract [MM:SS] timestamp citations. Returns [{timestamp_str, start_seconds}]."""
     pattern = r"\[(\d{1,2}):(\d{2})\]"
     citations = []
-    seen = set()
+    seen: set[str] = set()
     for match in re.finditer(pattern, answer_text):
-        minutes = int(match.group(1))
-        seconds = int(match.group(2))
+        minutes, seconds = int(match.group(1)), int(match.group(2))
         ts = f"{minutes:02d}:{seconds:02d}"
         if ts not in seen:
             seen.add(ts)
-            citations.append(
-                {
-                    "timestamp_str": ts,
-                    "start_seconds": minutes * 60 + seconds,
-                }
-            )
+            citations.append({"timestamp_str": ts, "start_seconds": minutes * 60 + seconds})
     return citations
 
+
+def _make_config(
+    system_instruction: str = "",
+    max_tokens: int = 1024,
+    json_mode: bool = False,
+) -> types.GenerateContentConfig:
+    """Build a GenerateContentConfig."""
+    kwargs: dict = {"max_output_tokens": max_tokens}
+    if system_instruction:
+        kwargs["system_instruction"] = system_instruction
+    if json_mode:
+        kwargs["response_mime_type"] = "application/json"
+    return types.GenerateContentConfig(**kwargs)
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def rag_chat(
     question: str,
@@ -74,78 +97,78 @@ def rag_chat(
     conversation_history: list[dict] | None = None,
 ) -> dict:
     """
-    Run a RAG Q&A turn.
+    Run a RAG Q&A turn using Gemini.
 
     Args:
         question: The user's question.
         retrieved_chunks: [{text, start_time, ...}, ...] from vector store.
-        conversation_history: Last 3-5 {role, content} turns.
+        conversation_history: Last 3-5 {role, content} turns (role: user/assistant).
 
     Returns:
         {answer: str, citations: [{timestamp_str, start_seconds, text}, ...]}
     """
     client = _get_client()
 
-    # Build the transcript context block
-    excerpts_lines = []
-    for chunk in retrieved_chunks:
-        ts = format_timestamp(chunk["start_time"])
-        excerpts_lines.append(f'[{ts}] "{chunk["text"]}"')
+    # Build transcript context block
+    excerpts_lines = [
+        f'[{format_timestamp(chunk["start_time"])}] "{chunk["text"]}"'
+        for chunk in retrieved_chunks
+    ]
     excerpts_block = "\n".join(excerpts_lines)
-
-    # Build conversation history block
-    history_block = ""
-    if conversation_history:
-        recent = conversation_history[-5:]
-        lines = []
-        for turn in recent:
-            role_label = "User" if turn["role"] == "user" else "Assistant"
-            lines.append(f"{role_label}: {turn['content']}")
-        history_block = "\nConversation so far:\n" + "\n".join(lines) + "\n"
 
     user_content = (
         f"Transcript excerpts:\n{excerpts_block}"
-        f"{history_block}"
         f"\nUser question: {question}"
     )
 
-    messages = [{"role": "user", "content": user_content}]
+    config = _make_config(system_instruction=RAG_SYSTEM_PROMPT, max_tokens=1024)
 
-    response = client.messages.create(
-        model=settings.claude_model,
-        max_tokens=1024,
-        system=RAG_SYSTEM_PROMPT,
-        messages=messages,
-    )
+    # Convert history to Gemini Content objects (role: "user"/"model")
+    if conversation_history:
+        history = [
+            types.Content(
+                role="model" if turn["role"] == "assistant" else "user",
+                parts=[types.Part(text=turn["content"])],
+            )
+            for turn in conversation_history[-5:]
+        ]
+        chat = client.chats.create(
+            model=settings.gemini_model,
+            config=config,
+            history=history,
+        )
+        response = chat.send_message(user_content)
+    else:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=user_content,
+            config=config,
+        )
 
-    answer = response.content[0].text
+    answer = response.text
     raw_citations = _parse_citations(answer)
 
-    # Enrich citations with chunk text where timestamps roughly match
+    # Enrich citations with nearest chunk text
     enriched = []
     for cit in raw_citations:
-        # Find the chunk whose start_time is closest to the citation seconds
-        best_chunk = None
-        best_diff = float("inf")
-        for chunk in retrieved_chunks:
-            diff = abs(chunk["start_time"] - cit["start_seconds"])
-            if diff < best_diff:
-                best_diff = diff
-                best_chunk = chunk
-        enriched.append(
-            {
-                "timestamp_str": cit["timestamp_str"],
-                "start_seconds": cit["start_seconds"],
-                "text": best_chunk["text"][:200] if best_chunk else "",
-            }
+        best_chunk: Optional[dict] = min(
+            retrieved_chunks,
+            key=lambda c: abs(c["start_time"] - cit["start_seconds"]),
+            default=None,
         )
+        enriched.append({
+            "timestamp_str": cit["timestamp_str"],
+            "start_seconds": cit["start_seconds"],
+            "text": best_chunk["text"][:200] if best_chunk else "",
+        })
 
     return {"answer": answer, "citations": enriched}
 
 
 def generate_summary(transcript_text: str) -> dict:
     """
-    Generate overview, key points, and chapter breakdown from transcript text.
+    Generate overview, key points, and chapters from transcript text.
+    Uses Gemini JSON mode for guaranteed valid JSON output.
 
     Returns {overview: str, key_points: [str], chapters: [{title, start_time}]}
     """
@@ -173,40 +196,16 @@ Transcript:
 {transcript_text[:40000]}
 """
 
-    response = client.messages.create(
-        model=settings.claude_model,
-        max_tokens=2048,
-        system=SUMMARY_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=prompt,
+        config=_make_config(system_instruction=SUMMARY_SYSTEM_PROMPT, max_tokens=2048, json_mode=True),
     )
 
-    raw = response.content[0].text.strip()
-
-    # Strip markdown code fences if present
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
-
     try:
-        data = json.loads(raw)
+        data = json.loads(_strip_fences(response.text))
     except json.JSONDecodeError:
-        # Retry with explicit correction prompt
-        retry_response = client.messages.create(
-            model=settings.claude_model,
-            max_tokens=2048,
-            system=SUMMARY_SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": raw},
-                {
-                    "role": "user",
-                    "content": "Your last response was not valid JSON. Return ONLY the JSON object, no other text.",
-                },
-            ],
-        )
-        raw2 = retry_response.content[0].text.strip()
-        raw2 = re.sub(r"^```(?:json)?\s*", "", raw2)
-        raw2 = re.sub(r"\s*```$", "", raw2)
-        data = json.loads(raw2)
+        data = {}
 
     return {
         "overview": data.get("overview", ""),
@@ -218,6 +217,7 @@ Transcript:
 def generate_quiz(overview: str, key_points: list[str]) -> list[dict]:
     """
     Generate 5-10 multiple-choice questions from the summary.
+    Uses Gemini JSON mode for guaranteed valid JSON output.
 
     Returns list of {question, options, correct_index, explanation}.
     """
@@ -243,44 +243,22 @@ Key points:
 {key_points_text}
 """
 
-    response = client.messages.create(
-        model=settings.claude_model,
-        max_tokens=3000,
-        system=QUIZ_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=prompt,
+        config=_make_config(system_instruction=QUIZ_SYSTEM_PROMPT, max_tokens=3000, json_mode=True),
     )
 
-    raw = response.content[0].text.strip()
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
-
     try:
-        questions = json.loads(raw)
+        return json.loads(_strip_fences(response.text))
     except json.JSONDecodeError:
-        retry_response = client.messages.create(
-            model=settings.claude_model,
-            max_tokens=3000,
-            system=QUIZ_SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": raw},
-                {
-                    "role": "user",
-                    "content": "Your last response was not valid JSON. Return ONLY the JSON array, no other text.",
-                },
-            ],
-        )
-        raw2 = retry_response.content[0].text.strip()
-        raw2 = re.sub(r"^```(?:json)?\s*", "", raw2)
-        raw2 = re.sub(r"\s*```$", "", raw2)
-        questions = json.loads(raw2)
-
-    return questions
+        return []
 
 
 def generate_flashcards(overview: str, key_points: list[str]) -> list[dict]:
     """
-    Generate flashcards (front: term/concept, back: definition/explanation).
+    Generate 8-12 flashcards (front: term/concept, back: definition/explanation).
+    Uses Gemini JSON mode for guaranteed valid JSON output.
 
     Returns list of {front, back}.
     """
@@ -305,36 +283,13 @@ Key points:
 {key_points_text}
 """
 
-    response = client.messages.create(
-        model=settings.claude_model,
-        max_tokens=2000,
-        system="You are an expert educational flashcard creator. Generate clear, concise flashcards.",
-        messages=[{"role": "user", "content": prompt}],
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=prompt,
+        config=_make_config(system_instruction=FLASHCARD_SYSTEM_PROMPT, max_tokens=2000, json_mode=True),
     )
 
-    raw = response.content[0].text.strip()
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
-
     try:
-        cards = json.loads(raw)
+        return json.loads(_strip_fences(response.text))
     except json.JSONDecodeError:
-        retry_response = client.messages.create(
-            model=settings.claude_model,
-            max_tokens=2000,
-            system="You are an expert educational flashcard creator. Generate clear, concise flashcards.",
-            messages=[
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": raw},
-                {
-                    "role": "user",
-                    "content": "Your last response was not valid JSON. Return ONLY the JSON array, no other text.",
-                },
-            ],
-        )
-        raw2 = retry_response.content[0].text.strip()
-        raw2 = re.sub(r"^```(?:json)?\s*", "", raw2)
-        raw2 = re.sub(r"\s*```$", "", raw2)
-        cards = json.loads(raw2)
-
-    return cards
+        return []
