@@ -5,7 +5,7 @@ import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Menu, X, LogOut, BookOpen } from "lucide-react";
+import { Menu, X, LogOut, Play } from "lucide-react";
 import { ProcessResult } from "@/api/client";
 import { VideoInput } from "@/components/VideoInput";
 import { LibrarySidebar } from "@/components/LibrarySidebar";
@@ -191,10 +191,10 @@ function AppPage() {
               </button>
               <div className="flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                  <BookOpen className="h-4 w-4 text-white" />
+                  <Play className="h-3.5 w-3.5 text-white fill-white" />
                 </div>
-                <span className="font-bold text-white text-sm tracking-tight">
-                  Learn<span className="text-indigo-400">Tube</span>
+                <span className="font-bold text-sm tracking-tight">
+                  <span className="text-indigo-400">Learn</span><span className="text-white">Tube</span>
                 </span>
               </div>
             </div>
