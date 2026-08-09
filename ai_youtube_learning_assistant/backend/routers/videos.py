@@ -164,7 +164,13 @@ async def chat(video_id: str, req: ChatRequest, db: Session = Depends(get_db)):
             conversation_history=conversation_history,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
+        err = str(e)
+        if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="AI quota limit reached. Please wait a moment and try again.",
+            )
+        raise HTTPException(status_code=500, detail=f"AI error: {err[:200]}")
 
     # Persist both turns
     _store_message(db, video_id, "user", req.message, None)
@@ -278,7 +284,10 @@ async def get_quiz(video_id: str, db: Session = Depends(get_db)):
             db.add(quiz)
             db.commit()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Quiz generation failed: {str(e)}")
+            err = str(e)
+            if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
+                raise HTTPException(status_code=429, detail="AI quota limit reached. Please wait and try again.")
+            raise HTTPException(status_code=500, detail=f"Quiz generation failed: {err[:200]}")
 
     return json.loads(quiz.questions_json)
 
@@ -316,6 +325,9 @@ async def get_flashcards(video_id: str, db: Session = Depends(get_db)):
             db.commit()
             cards = db.query(Flashcard).filter(Flashcard.video_id == video_id).all()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Flashcard generation failed: {str(e)}")
+            err = str(e)
+            if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
+                raise HTTPException(status_code=429, detail="AI quota limit reached. Please wait and try again.")
+            raise HTTPException(status_code=500, detail=f"Flashcard generation failed: {err[:200]}")
 
     return [{"id": c.id, "front": c.front, "back": c.back} for c in cards]
