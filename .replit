@@ -30,3 +30,4 @@ SQLITE_DB_PATH = "./app.db"
 
 [nix]
 channel = "stable-25_05"
+packages = ["freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]

@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "wEcs2Y4CNvJ0oY75tSfop"
+uri = "file://LearnTube_Project_Report.pdf"
+type = "pdf"
+title = "LearnTube — Project Report (PDF)"
+description = "Complete project report: Introduction, Problem Statement, Architecture, Tech Stack, UI Screenshots, Results, and Future Approach. AIML Internship 2025."
