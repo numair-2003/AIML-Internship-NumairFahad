@@ -113,7 +113,7 @@ export function HomePage() {
           <motion.div variants={fadeUp}>
             <span className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-8">
               <Sparkles className="h-3.5 w-3.5" />
-              Powered by Claude AI
+              Powered by Google Gemini AI
             </span>
           </motion.div>
 
@@ -246,7 +246,7 @@ export function HomePage() {
           {[
             { value: "10s", label: "To process any video" },
             { value: "5+", label: "Learning modes" },
-            { value: "100%", label: "Powered by Claude AI" },
+            { value: "100%", label: "Powered by Google Gemini AI" },
             { value: "Free", label: "To get started" },
           ].map((stat) => (
             <div

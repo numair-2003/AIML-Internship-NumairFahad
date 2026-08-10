@@ -245,7 +245,7 @@ export function HomePage() {
           {[
             { value: "10s", label: "To process any video" },
             { value: "5+", label: "Learning modes" },
-            { value: "100%", label: "Powered by Claude AI" },
+            { value: "100%", label: "Powered by Google Gemini AI" },
             { value: "Free", label: "To get started" },
           ].map((stat) => (
             <div

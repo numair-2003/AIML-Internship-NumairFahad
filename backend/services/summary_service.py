@@ -37,7 +37,7 @@ def generate_and_store_summary(video_id: str, transcript_segments: list[dict]) -
         # Build transcript text (may be large; llm_service truncates at 40k chars)
         transcript_text = _build_full_transcript_text(transcript_segments)
 
-        # Generate via Claude
+        # Generate via Gemini
         result = generate_summary(transcript_text)
 
         summary = Summary(

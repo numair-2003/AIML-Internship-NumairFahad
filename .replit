@@ -23,7 +23,7 @@ timeoutMs = 120000
 
 [userenv.shared]
 CHROMA_PERSIST_DIR = "./chroma_db"
-CLAUDE_MODEL = "claude-sonnet-4-6"
+GEMINI_MODEL = "gemini-2.0-flash"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 INTENT_MODEL_PATH = "./models/intent_classifier"
 SQLITE_DB_PATH = "./app.db"

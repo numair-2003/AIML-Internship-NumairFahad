@@ -18,7 +18,7 @@ description: Core architecture decisions for LearnTube — stack, LLM provider, 
 - Uses `response_mime_type="application/json"` (JSON mode) for summary, quiz, flashcard generation — no retry needed.
 - Chat history: convert `"assistant"` → `"model"` role when building `types.Content` history objects.
 
-**Why switched from Anthropic:** User requested migration from Claude to Gemini (their own API key).
+**LLM:** Google Gemini 2.0 Flash via google-genai SDK — all chat, summary, quiz, and flashcard generation.
 
 ## Key constraints
 - Python packages must be installed via `installLanguagePackages` (uv), NOT `pip install` — NixOS blocks pip.

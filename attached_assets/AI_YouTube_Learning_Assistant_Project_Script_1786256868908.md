@@ -47,9 +47,9 @@
 |---|---|---|
 | Backend framework | **Python + FastAPI** | Best ecosystem for LLM/NLP/RAG libraries; async support; auto-generated OpenAPI docs for testing endpoints. |
 | Frontend framework | **React (Vite) + Tailwind CSS** | Fast dev loop on Replit, component-based, easy to style a clean chat UI. |
-| LLM provider | **Anthropic Claude API** (`claude-sonnet-4-6` for chat/summary/quiz generation; a cheaper/faster Claude model may be used for lightweight tasks) | Single provider, no abstraction layer needed — call the Anthropic SDK directly from `llm_service.py`. |
-| Embeddings | **`sentence-transformers/all-MiniLM-L6-v2`** (local, free, runs inside the Repl) | Anthropic does not provide a public embeddings endpoint, so embeddings are handled by a local open-source model — no extra API key or cost, and fast enough for transcript-scale retrieval. |
-| Fine-tuning | **HuggingFace `transformers` + `datasets`** (local fine-tuning of a small open-source model — see Section 6) | Used for a specific NLP subtask (see below), separate from the Claude-powered RAG chat. |
+| LLM provider | **Google Gemini API** (`gemini-2.0-flash` for chat/summary/quiz generation; a cheaper/faster Gemini model may be used for lightweight tasks) | Single provider, no abstraction layer needed — call the google-genai SDK directly from `llm_service.py`. |
+| Embeddings | **`sentence-transformers/all-MiniLM-L6-v2`** (local, free, runs inside the Repl) | Google provides a public embeddings endpoint, so embeddings are handled by a local open-source model — no extra API key or cost, and fast enough for transcript-scale retrieval. |
+| Fine-tuning | **HuggingFace `transformers` + `datasets`** (local fine-tuning of a small open-source model — see Section 6) | Used for a specific NLP subtask (see below), separate from the Gemini-powered RAG chat. |
 | Vector store | **ChromaDB** (local, file-based, runs directly inside the Repl — no external service needed) | Zero external setup, persists to disk, perfect for a single-deployment Replit app. |
 | Relational DB (metadata, users, library, quiz results) | **SQLite** via SQLAlchemy (upgradeable to Postgres later if needed) | Simple, file-based, no external DB service required for MVP. |
 | Transcript fetching | **`youtube-transcript-api`** (Python package) | Fetches auto-generated or manual captions directly by video ID, no API key required. |
@@ -135,13 +135,13 @@
 
 ## 6. Fine-Tuning Component
 
-The RAG chat, summary, and quiz generation all run on the **Claude API** (no fine-tuning available or needed there — RAG grounding already solves the accuracy problem for those tasks). Fine-tuning is instead used for a **specific, self-contained NLP subtask** where a small custom model adds real value and is genuinely trainable within a Replit environment, rather than fine-tuning being bolted on artificially.
+The RAG chat, summary, and quiz generation all run on the **Google Gemini API** (no fine-tuning available or needed there — RAG grounding already solves the accuracy problem for those tasks). Fine-tuning is instead used for a **specific, self-contained NLP subtask** where a small custom model adds real value and is genuinely trainable within a Replit environment, rather than fine-tuning being bolted on artificially.
 
 **Recommended subtask: Question-type / intent classifier for the chat input.**
 
 - **Purpose:** before a user's chat message is sent into the RAG pipeline, classify it into an intent category — e.g., `factual_question`, `summary_request`, `definition_request`, `opinion_request`, `off_topic`. This routes the message to the right handling logic (e.g., `summary_request` can short-circuit straight to the cached summary instead of doing a full retrieval call; `off_topic` can trigger a polite redirect instead of forcing the LLM to hallucinate a grounded answer for something the video doesn't cover).
 - **Base model:** a small pretrained encoder such as `distilbert-base-uncased` (fast to fine-tune, small enough to run on CPU, well within Replit's resource limits).
-- **Dataset:** construct a labeled dataset of a few hundred to a few thousand example questions per intent category. Bootstrap this by (a) writing a seed set of examples by hand for each category, and (b) using the Claude API offline (a one-time script, not part of the running app) to generate additional paraphrased examples per category, which are then reviewed and saved as the training set (`data/intent_dataset.csv` with columns `text,label`).
+- **Dataset:** construct a labeled dataset of a few hundred to a few thousand example questions per intent category. Bootstrap this by (a) writing a seed set of examples by hand for each category, and (b) using the Google Gemini API offline (a one-time script, not part of the running app) to generate additional paraphrased examples per category, which are then reviewed and saved as the training set (`data/intent_dataset.csv` with columns `text,label`).
 - **Training:** use HuggingFace `Trainer` with a standard train/validation split, few epochs (3–5), and track accuracy/F1 per class. Save the fine-tuned model to `models/intent_classifier/`.
 - **Integration:** load the fine-tuned model once at backend startup; run every incoming chat message through it before the RAG pipeline; log the predicted intent alongside the chat message in the database (useful for later analysis of what users actually ask).
 - **Where this fits in the build order:** this is a **Phase 2 addition**, built and trained *after* the Phase 1 MVP (Section 2) is working, since the MVP RAG loop must exist first to have a realistic pool of real chat questions to (optionally) fold back into the training set.
@@ -303,8 +303,8 @@ src/
 ## 11. Environment Variables / Secrets (set in Replit Secrets, never hardcoded)
 
 ```
-ANTHROPIC_API_KEY=...
-CLAUDE_MODEL=claude-sonnet-4-6      # used for chat / summary / quiz generation
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.0-flash      # used for chat / summary / quiz generation
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 INTENT_MODEL_PATH=./models/intent_classifier   # path to the fine-tuned classifier (Section 6)
 DATABASE_URL=sqlite:///./app.db
@@ -334,7 +334,7 @@ CHROMA_PERSIST_DIR=./chroma_db
 - No user authentication system required for MVP — a browser-session-scoped or fully public library is fine unless the internship explicitly requires accounts.
 - No support for uploading video files directly — YouTube URL only.
 - No real-time/streaming transcript for live videos — recorded videos with existing captions only.
-- Fine-tuning is scoped to **the intent classifier only** (Section 6) — do not attempt to fine-tune Claude itself (not available via the public API used here); keep the fine-tuning component small and self-contained so it doesn't block the core RAG features.
+- Fine-tuning is scoped to **the intent classifier only** (Section 6) — do not attempt to fine-tune Gemini itself (not available via the public API used here); keep the fine-tuning component small and self-contained so it doesn't block the core RAG features.
 
 ---
 
