@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine, Column, String, Integer, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import text as sa_text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.sql import func
@@ -28,12 +29,32 @@ class Video(Base):
     summary = relationship("Summary", back_populates="video", uselist=False, cascade="all, delete-orphan")
     quizzes = relationship("Quiz", back_populates="video", cascade="all, delete-orphan")
     flashcards = relationship("Flashcard", back_populates="video", cascade="all, delete-orphan")
+    user_videos = relationship("UserVideo", back_populates="video", cascade="all, delete-orphan")
+
+
+class UserVideo(Base):
+    """
+    Ownership table: tracks which Clerk users have added which YouTube videos.
+    Video content (transcript, summary, quiz, flashcards) is shared across all
+    users who process the same YouTube video, but access is scoped per owner.
+    """
+    __tablename__ = "user_videos"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False, index=True)   # Clerk sub claim
+    video_id = Column(String, ForeignKey("videos.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("user_id", "video_id", name="uq_user_video"),)
+
+    video = relationship("Video", back_populates="user_videos")
 
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=True, index=True)   # Clerk sub claim; nullable for migration compat
     video_id = Column(String, ForeignKey("videos.id"), nullable=False)
     role = Column(String, nullable=False)  # user | assistant
     content = Column(Text, nullable=False)
@@ -87,4 +108,20 @@ def get_db():
 
 
 def init_db():
+    # Create all tables defined above (additive; existing tables are not dropped)
     Base.metadata.create_all(bind=engine)
+
+    # SQLite doesn't support adding columns via create_all on existing tables,
+    # so we run lightweight migrations manually.
+    _run_migrations()
+
+
+def _run_migrations():
+    """Apply incremental schema changes to an already-existing database."""
+    with engine.connect() as conn:
+        # Add user_id column to chat_messages if it was created before this column existed
+        result = conn.execute(sa_text("PRAGMA table_info(chat_messages)"))
+        existing_cols = {row[1] for row in result}
+        if "user_id" not in existing_cols:
+            conn.execute(sa_text("ALTER TABLE chat_messages ADD COLUMN user_id VARCHAR"))
+            conn.commit()
