@@ -16,10 +16,16 @@ LearnTube transforms any YouTube video into an interactive learning experience �
 
 | Stack | Technology |
 |-------|-----------|
-| Backend | FastAPI (Python 3.13), Google Gemini 2.0 Flash, ChromaDB, sentence-transformers |
+| Backend | FastAPI (Python 3.13), Google Gemini 2.0 Flash, ChromaDB, SQLite, scikit-learn, slowapi |
 | Web Frontend | React 18, Vite 6, Tailwind CSS v4, Clerk Auth |
 | Mobile App | Expo 53, React Native 0.79, Clerk Auth |
 | Deployment | Autoscale (Replit), live at `ai-you-tube-assistant.replit.app` |
+
+### Recent Production Fixes (August 2026)
+
+- **Clerk proxy domain fix** — Production backend now reads `REPLIT_DOMAINS` (the live deployment hostname) instead of `REPLIT_DEV_DOMAIN` when setting the `Clerk-Proxy-Url` header. Using the dev domain caused Clerk FAPI to reject every request with 400, leaving the React app blank. A `CLERK_PROXY_HOST` production env var overrides both as the highest-priority fallback.
+- **CORS allowlist** — Extended to include all domains from `REPLIT_DOMAINS` so the production frontend can reach the API without CORS errors.
+- **Python workspace packages** — `slowapi` (rate limiting) and `scikit-learn` (intent classifier) added to the workspace `pyproject.toml` so `uv sync` no longer silently removes them.
 
 ---
 
