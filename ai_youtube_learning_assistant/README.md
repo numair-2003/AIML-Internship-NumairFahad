@@ -178,6 +178,7 @@ pnpm dev
 
 | Fix | Detail |
 |-----|--------|
+| **Repo restructure** | All project files (`artifacts/`, `backend/`, `chroma_db/`) moved inside `ai_youtube_learning_assistant/`. `pnpm-workspace.yaml` and all `artifact.toml` / `tsconfig.json` paths updated accordingly. Nothing now lives at the repo root. |
 | **Clerk session drop (production)** | Clerk proxy on the backend was blocked when using development keys (`sk_test_`). Removed the `sk_live` restriction — proxy now works with any valid `CLERK_SECRET_KEY`, so sessions persist correctly in production. |
 | **Infinite spinner on `/app`** | `AppPage` now shows a branded loading spinner while Clerk initialises (instead of a white flash or immediate wrong redirect). Only redirects to `/` once `isLoaded=true` and user is confirmed signed-out. |
 | **OAuth redirect always lands on `/app`** | Changed `fallbackRedirectUrl` → `forceRedirectUrl` on `<SignIn>` and `<SignUp>` components + `ClerkProvider`. Post-OAuth redirect is now unconditional. |
