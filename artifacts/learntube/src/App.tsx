@@ -26,8 +26,11 @@ const clerkPubKey = publishableKeyFromHost(
 // browsers and cause the session to be dropped on every page load).
 const _isDevHost =
   window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1" ||
   window.location.hostname.endsWith(".replit.dev") ||
-  window.location.hostname.endsWith(".repl.co");
+  window.location.hostname.endsWith(".repl.co") ||
+  // Replit workspace internal preview proxy (numeric IP or *.repl.co subdomain)
+  /^\d{1,3}(\.\d{1,3}){3}$/.test(window.location.hostname);
 
 const clerkProxyUrl: string | undefined =
   import.meta.env.VITE_CLERK_PROXY_URL ||
