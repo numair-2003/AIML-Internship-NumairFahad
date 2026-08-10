@@ -15,7 +15,7 @@ run = "cd /home/runner/workspace/backend && python main.py"
 [services.production]
 
 [services.production.build]
-args = ["pip", "install", "-r", "/home/runner/workspace/backend/requirements.txt"]
+args = ["pip", "install", "--break-system-packages", "-r", "/home/runner/workspace/backend/requirements.txt"]
 
 [services.production.run]
 args = ["python", "/home/runner/workspace/backend/main.py"]
