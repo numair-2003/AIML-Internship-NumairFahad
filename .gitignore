@@ -47,3 +47,23 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Replit workspace infrastructure — needed on disk, not for GitHub
+.replit
+.npmrc
+.replitignore
+replit.md
+pnpm-workspace.yaml
+pnpm-lock.yaml
+package.json
+tsconfig.base.json
+tsconfig.json
+uv.lock
+pyproject.toml
+lib/
+scripts/
+
+# Agent internals — never commit
+.agents/
+attached_assets/
+screenshots/
