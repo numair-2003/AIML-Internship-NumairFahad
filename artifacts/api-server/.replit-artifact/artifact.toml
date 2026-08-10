@@ -1,0 +1,27 @@
+kind = "api"
+previewPath = "/api"
+title = "API Server"
+version = "1.0.0"
+id = "3B4_FFSkEVBkAeYMFRJ2e"
+
+[[services]]
+localPort = 8080
+name = "API Server"
+paths = ["/api"]
+
+[services.development]
+run = "cd /home/runner/workspace/backend && python main.py"
+
+[services.production]
+
+[services.production.build]
+args = ["sh", "-c", "python -m venv /home/runner/workspace/.venv && /home/runner/workspace/.venv/bin/pip install --prefer-binary -r /home/runner/workspace/backend/requirements.txt"]
+
+[services.production.run]
+args = ["/home/runner/workspace/.venv/bin/python", "/home/runner/workspace/backend/main.py"]
+
+[services.production.run.env]
+PORT = "8080"
+
+[services.production.health.startup]
+path = "/api/healthz"

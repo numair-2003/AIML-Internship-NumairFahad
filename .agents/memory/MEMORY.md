@@ -1,0 +1,8 @@
+- [LearnTube architecture](learntube-arch.md) — FastAPI backend at /api, React/Vite frontend at /, SQLite + ChromaDB, no PyTorch; Clerk auth + Gemini LLM
+- [Clerk auth setup](clerk-auth-setup.md) — Replit-managed Clerk; PyJWT[crypto] installed via uv; proxy at /api/__clerk; JWT verification in backend/services/clerk_auth.py
+- [youtube-transcript-api v1.x breaking change](yt-transcript-api.md) — v1.x uses instance methods; get_transcript removed
+- [Python 3.13 type union syntax](py313-type-union.md) — X | None in module-level var annotations requires Optional[X] from typing
+- [Intent classifier training](intent-classifier.md) — sklearn TF-IDF + LogisticRegression, 85% accuracy, model at backend/models/intent_classifier/classifier.pkl
+- [Backend working directory for production](backend-cwd.md) — main.py must os.chdir to its own directory for relative paths to work in production
+- [Clerk proxy production domain fix](clerk-proxy-production.md) — Clerk proxy must use REPLIT_DOMAINS (not REPLIT_DEV_DOMAIN) for Clerk-Proxy-Url; wrong domain → 400 → blank page
+- [Clerk proxy cookie — VITE_CLERK_PROXY_URL must be set or auto-detected](clerk-proxy-cookie.md) — Without proxyUrl, Clerk JS hits FAPI directly; cross-site cookies blocked → 401 on every auth step → blank /app

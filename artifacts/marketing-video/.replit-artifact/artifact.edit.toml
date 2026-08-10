@@ -1,0 +1,17 @@
+kind = "web"
+previewPath = "/marketing-video"
+title = "LearnTube Marketing Video"
+version = "1.0.0"
+id = "artifacts/marketing-video"
+
+[[services]]
+name = "web"
+paths = ["/marketing-video"]
+localPort = 22798
+
+[services.development]
+run = "pnpm --filter marketing-video run dev"
+
+[services.env]
+PORT = "22798"
+BASE_PATH = "/marketing-video"
