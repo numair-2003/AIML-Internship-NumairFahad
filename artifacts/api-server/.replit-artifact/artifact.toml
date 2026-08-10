@@ -15,10 +15,10 @@ run = "cd /home/runner/workspace/backend && python main.py"
 [services.production]
 
 [services.production.build]
-args = ["pip", "install", "--break-system-packages", "--prefer-binary", "-r", "/home/runner/workspace/backend/requirements.txt"]
+args = ["sh", "-c", "python -m venv /home/runner/workspace/.venv && /home/runner/workspace/.venv/bin/pip install --prefer-binary -r /home/runner/workspace/backend/requirements.txt"]
 
 [services.production.run]
-args = ["python", "/home/runner/workspace/backend/main.py"]
+args = ["/home/runner/workspace/.venv/bin/python", "/home/runner/workspace/backend/main.py"]
 
 [services.production.run.env]
 PORT = "8080"
