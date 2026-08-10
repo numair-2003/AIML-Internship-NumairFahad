@@ -157,10 +157,20 @@ export function HomePage() {
           initial={{ opacity: 0, y: 48, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-16 relative"
+          className="mt-16 relative cursor-pointer group"
+          onClick={() => setLocation("/sign-up")}
+          role="button"
+          aria-label="Try LearnTube for free"
         >
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-indigo-500/20 to-transparent blur-2xl scale-110" />
-          <div className="relative rounded-3xl border border-slate-700/60 bg-slate-900/80 backdrop-blur-xl overflow-hidden glow-indigo">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-indigo-500/20 to-transparent blur-2xl scale-110 group-hover:from-indigo-500/30 transition-all duration-300" />
+          {/* Hover overlay CTA */}
+          <div className="absolute inset-0 rounded-3xl bg-indigo-900/0 group-hover:bg-indigo-900/40 transition-all duration-300 z-10 flex items-center justify-center pointer-events-none">
+            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100 bg-indigo-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-indigo-500/40 flex items-center gap-2">
+              <Play className="h-4 w-4 fill-white" />
+              Try it for free →
+            </div>
+          </div>
+          <div className="relative rounded-3xl border border-slate-700/60 bg-slate-900/80 backdrop-blur-xl overflow-hidden glow-indigo group-hover:border-indigo-500/40 transition-all duration-300">
             {/* Mock browser bar */}
             <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-700/60 bg-slate-800/60">
               <div className="flex gap-1.5">
@@ -192,9 +202,13 @@ export function HomePage() {
                 {/* Video player stub */}
                 <div className="rounded-2xl bg-slate-800/60 border border-slate-700/40 h-28 flex items-center justify-center shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                    <motion.div
+                      animate={{ scale: [1, 1.12, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 8px rgba(99,102,241,0.25)", "0 0 0 0 rgba(99,102,241,0)"] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center cursor-pointer"
+                    >
                       <Play className="h-5 w-5 text-white ml-0.5" />
-                    </div>
+                    </motion.div>
                     <div>
                       <div className="h-2.5 rounded-full bg-slate-600/80 w-40 mb-2" />
                       <div className="h-1.5 rounded-full bg-slate-700/60 w-28" />

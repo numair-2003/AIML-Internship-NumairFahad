@@ -21,11 +21,13 @@ LearnTube transforms any YouTube video into an interactive learning experience �
 | Mobile App | Expo 53, React Native 0.79, Clerk Auth |
 | Deployment | Autoscale (Replit), live at `ai-you-tube-assistant.replit.app` |
 
-### Recent Production Fixes (August 2026)
+### Recent Fixes & Improvements (August 2026)
 
+- **Google OAuth redirect fix** — After signing in or signing up with Google, users are now reliably redirected to the app workspace. Changed `fallbackRedirectUrl` to `forceRedirectUrl` on Sign-In/Sign-Up components and added `signInForceRedirectUrl`/`signUpForceRedirectUrl` to `ClerkProvider` so the redirect always fires regardless of any stored pre-OAuth URL.
+- **Interactive hero mock** — The app preview card on the landing page now has a hover overlay ("Try it for free →") and click-to-sign-up behaviour. The play button pulses with a glow animation to draw attention.
 - **Clerk proxy domain fix** — Production backend now reads `REPLIT_DOMAINS` (the live deployment hostname) instead of `REPLIT_DEV_DOMAIN` when setting the `Clerk-Proxy-Url` header. Using the dev domain caused Clerk FAPI to reject every request with 400, leaving the React app blank. A `CLERK_PROXY_HOST` production env var overrides both as the highest-priority fallback.
 - **CORS allowlist** — Extended to include all domains from `REPLIT_DOMAINS` so the production frontend can reach the API without CORS errors.
-- **Python workspace packages** — `slowapi` (rate limiting) and `scikit-learn` (intent classifier) added to the workspace `pyproject.toml` so `uv sync` no longer silently removes them.
+- **Python workspace packages** — Removed 1115 unused PyTorch source entries from `pyproject.toml` that were causing >120 s uv rebuild on every workflow restart; kept only the actual backend dependencies.
 
 ---
 
