@@ -1,17 +1,24 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database import get_db, Video
+from database import get_db, Video, UserVideo
+from services.clerk_auth import require_auth
 
 router = APIRouter()
 
 
 @router.get("")
-async def get_library(db: Session = Depends(get_db)):
-    """Return all previously processed videos, newest first."""
+async def get_library(
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    """Return all videos belonging to the authenticated user, newest first."""
+    user_id: str = user["sub"]
+
     videos = (
         db.query(Video)
-        .filter(Video.status == "ready")
-        .order_by(Video.created_at.desc())
+        .join(UserVideo, UserVideo.video_id == Video.id)
+        .filter(UserVideo.user_id == user_id, Video.status == "ready")
+        .order_by(UserVideo.created_at.desc())
         .all()
     )
     return [
