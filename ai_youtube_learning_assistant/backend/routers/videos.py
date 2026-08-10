@@ -1,19 +1,22 @@
 """
 Video router — all /api/videos/* endpoints.
-Step 3: RAG chat is fully wired.
-Steps 5-6: Summary, Quiz, Flashcards generated on-demand and cached.
+All routes require authentication via Clerk JWT (require_auth dependency).
+User isolation is enforced via the UserVideo ownership table and per-user
+chat message filtering.
 """
 
 import asyncio
 import json
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database import get_db, Video, ChatMessage, Summary, Quiz, Flashcard
+from database import get_db, Video, ChatMessage, Summary, Quiz, Flashcard, UserVideo
 from services.ingestion_service import process_video
 from services.summary_service import generate_and_store_summary
 from services.vectorstore_service import query_chunks
 from services.llm_service import rag_chat, generate_quiz, generate_flashcards
+from services.clerk_auth import require_auth
+from rate_limiter import limiter
 
 router = APIRouter()
 
@@ -26,19 +29,48 @@ class ChatRequest(BaseModel):
     message: str
 
 
+def _get_user_video(db: Session, user_id: str, video_id: str) -> UserVideo:
+    """Return the UserVideo ownership record, or raise 404."""
+    uv = (
+        db.query(UserVideo)
+        .filter(UserVideo.user_id == user_id, UserVideo.video_id == video_id)
+        .first()
+    )
+    if not uv:
+        raise HTTPException(status_code=404, detail="Video not found")
+    return uv
+
+
+def _ensure_user_video(db: Session, user_id: str, video_id: str) -> None:
+    """Create a UserVideo ownership record if one does not already exist."""
+    existing = (
+        db.query(UserVideo)
+        .filter(UserVideo.user_id == user_id, UserVideo.video_id == video_id)
+        .first()
+    )
+    if not existing:
+        db.add(UserVideo(user_id=user_id, video_id=video_id))
+        db.commit()
+
+
 # ── Ingestion ────────────────────────────────────────────────────────────────
 
 @router.post("/process")
+@limiter.limit("10/minute")
 async def process_video_endpoint(
+    request: Request,
     req: ProcessRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
 ):
     """
     Kick off ingestion pipeline for a YouTube URL.
     URL parsing → transcript → chunking → ChromaDB embedding → SQLite record.
     Summary generation is triggered as a background task after indexing.
     """
+    user_id: str = user["sub"]
+
     try:
         result = await process_video(req.url, db)
     except ValueError as e:
@@ -46,13 +78,16 @@ async def process_video_endpoint(
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    # Register ownership so this user can access the video
+    _ensure_user_video(db, user_id, result["video_id"])
+
     # Kick off background summary if the video was freshly processed
     if result.get("status") == "ready" and result.get("chunks_indexed"):
         from services.transcript_service import fetch_transcript
         video_id = result["video_id"]
         # Check if summary already exists
-        existing = db.query(Summary).filter(Summary.video_id == video_id).first()
-        if not existing:
+        existing_summary = db.query(Summary).filter(Summary.video_id == video_id).first()
+        if not existing_summary:
             try:
                 segments = fetch_transcript(video_id)
                 chunk_dicts = [
@@ -71,7 +106,14 @@ async def process_video_endpoint(
 # ── Video metadata ───────────────────────────────────────────────────────────
 
 @router.get("/{video_id}")
-async def get_video(video_id: str, db: Session = Depends(get_db)):
+async def get_video(
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
     video = db.query(Video).filter(Video.id == video_id).first()
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
@@ -91,13 +133,23 @@ async def get_video(video_id: str, db: Session = Depends(get_db)):
 # ── Chat ─────────────────────────────────────────────────────────────────────
 
 @router.post("/{video_id}/chat")
-async def chat(video_id: str, req: ChatRequest, db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+async def chat(
+    request: Request,
+    video_id: str,
+    req: ChatRequest,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
     """
     RAG chat endpoint.
     1. Classify intent (factual / summary / definition / opinion / off_topic).
     2. For summary_request → short-circuit to cached summary.
-    3. Otherwise: retrieve top-5 chunks → call Claude → parse citations → store.
+    3. Otherwise: retrieve top-5 chunks → call LLM → parse citations → store.
     """
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
     video = db.query(Video).filter(Video.id == video_id).first()
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
@@ -121,8 +173,8 @@ async def chat(video_id: str, req: ChatRequest, db: Session = Depends(get_db)):
                 f"**Key Points:**\n"
                 + "\n".join(f"• {p}" for p in json.loads(summary.key_points_json))
             )
-            _store_message(db, video_id, "user", req.message, None)
-            _store_message(db, video_id, "assistant", answer, [])
+            _store_message(db, user_id, video_id, "user", req.message, None)
+            _store_message(db, user_id, video_id, "assistant", answer, [])
             return {"answer": answer, "citations": [], "intent": intent}
 
     # Handle off-topic
@@ -132,14 +184,14 @@ async def chat(video_id: str, req: ChatRequest, db: Session = Depends(get_db)):
             "Your question appears to be unrelated to the video. "
             "Try asking something about the topics covered in the video!"
         )
-        _store_message(db, video_id, "user", req.message, None)
-        _store_message(db, video_id, "assistant", answer, [])
+        _store_message(db, user_id, video_id, "user", req.message, None)
+        _store_message(db, user_id, video_id, "assistant", answer, [])
         return {"answer": answer, "citations": [], "intent": intent}
 
-    # Get conversation history (last 5 turns)
+    # Get this user's conversation history for this video (last 5 turns)
     history_rows = (
         db.query(ChatMessage)
-        .filter(ChatMessage.video_id == video_id)
+        .filter(ChatMessage.video_id == video_id, ChatMessage.user_id == user_id)
         .order_by(ChatMessage.created_at)
         .all()
     )
@@ -173,8 +225,8 @@ async def chat(video_id: str, req: ChatRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"AI error: {err[:200]}")
 
     # Persist both turns
-    _store_message(db, video_id, "user", req.message, None)
-    _store_message(db, video_id, "assistant", result["answer"], result["citations"])
+    _store_message(db, user_id, video_id, "user", req.message, None)
+    _store_message(db, user_id, video_id, "assistant", result["answer"], result["citations"])
 
     return {
         "answer": result["answer"],
@@ -183,8 +235,9 @@ async def chat(video_id: str, req: ChatRequest, db: Session = Depends(get_db)):
     }
 
 
-def _store_message(db: Session, video_id: str, role: str, content: str, citations):
+def _store_message(db: Session, user_id: str, video_id: str, role: str, content: str, citations):
     msg = ChatMessage(
+        user_id=user_id,
         video_id=video_id,
         role=role,
         content=content,
@@ -195,10 +248,17 @@ def _store_message(db: Session, video_id: str, role: str, content: str, citation
 
 
 @router.get("/{video_id}/chat/history")
-async def chat_history(video_id: str, db: Session = Depends(get_db)):
+async def chat_history(
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
     messages = (
         db.query(ChatMessage)
-        .filter(ChatMessage.video_id == video_id)
+        .filter(ChatMessage.video_id == video_id, ChatMessage.user_id == user_id)
         .order_by(ChatMessage.created_at)
         .all()
     )
@@ -215,8 +275,18 @@ async def chat_history(video_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{video_id}/chat/history")
-async def clear_chat_history(video_id: str, db: Session = Depends(get_db)):
-    db.query(ChatMessage).filter(ChatMessage.video_id == video_id).delete()
+async def clear_chat_history(
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
+    db.query(ChatMessage).filter(
+        ChatMessage.video_id == video_id,
+        ChatMessage.user_id == user_id,
+    ).delete()
     db.commit()
     return {"ok": True}
 
@@ -224,7 +294,16 @@ async def clear_chat_history(video_id: str, db: Session = Depends(get_db)):
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 @router.get("/{video_id}/summary")
-async def get_summary(video_id: str, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def get_summary(
+    request: Request,
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
     video = db.query(Video).filter(Video.id == video_id).first()
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
@@ -240,7 +319,7 @@ async def get_summary(video_id: str, db: Session = Depends(get_db)):
                 None, generate_and_store_summary, video_id, chunk_dicts
             )
             summary = db.query(Summary).filter(Summary.video_id == video_id).first()
-        except Exception as e:
+        except Exception:
             raise HTTPException(
                 status_code=503,
                 detail="Summary is still generating — try again in a few seconds.",
@@ -259,7 +338,16 @@ async def get_summary(video_id: str, db: Session = Depends(get_db)):
 # ── Quiz ─────────────────────────────────────────────────────────────────────
 
 @router.get("/{video_id}/quiz")
-async def get_quiz(video_id: str, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def get_quiz(
+    request: Request,
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
     video = db.query(Video).filter(Video.id == video_id).first()
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
@@ -295,7 +383,16 @@ async def get_quiz(video_id: str, db: Session = Depends(get_db)):
 # ── Flashcards ───────────────────────────────────────────────────────────────
 
 @router.get("/{video_id}/flashcards")
-async def get_flashcards(video_id: str, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def get_flashcards(
+    request: Request,
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    user_id: str = user["sub"]
+    _get_user_video(db, user_id, video_id)  # raises 404 if not owned
+
     video = db.query(Video).filter(Video.id == video_id).first()
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
