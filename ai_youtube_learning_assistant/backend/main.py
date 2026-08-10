@@ -38,6 +38,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # never used.  REPLIT_DEV_DOMAIN is set by the Replit platform; additional
 # origins can be supplied via the ALLOWED_ORIGINS env var (comma-separated).
 _replit_domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
+_replit_expo_domain = os.environ.get("REPLIT_EXPO_DEV_DOMAIN", "")
+# REPLIT_DOMAINS is the production domain list (comma-separated), injected by
+# the Replit platform at runtime in autoscale deployments.
+_replit_prod_domains = [
+    d.strip()
+    for d in os.environ.get("REPLIT_DOMAINS", "").split(",")
+    if d.strip()
+]
 _extra_origins = [
     o.strip()
     for o in os.environ.get("ALLOWED_ORIGINS", "").split(",")
@@ -47,6 +55,15 @@ _extra_origins = [
 _allowed_origins: list[str] = []
 if _replit_domain:
     _allowed_origins.append(f"https://{_replit_domain}")
+# Expo web preview runs on a separate subdomain — must be whitelisted explicitly.
+if _replit_expo_domain:
+    _allowed_origins.append(f"https://{_replit_expo_domain}")
+# Production domains (e.g. myapp.replit.app) must also be in the allowlist so
+# that same-site production requests with credentials are accepted.
+for _prod_domain in _replit_prod_domains:
+    _prod_origin = f"https://{_prod_domain}"
+    if _prod_origin not in _allowed_origins:
+        _allowed_origins.append(_prod_origin)
 _allowed_origins.extend(_extra_origins)
 
 # Fall back to localhost for purely local development (no Replit env).
@@ -100,12 +117,12 @@ _CLERK_FORWARD_HEADERS = {
 async def clerk_proxy(path: str, request: Request):
     """
     Proxy Clerk Frontend API requests through this domain.
-    Only active in production (CLERK_SECRET_KEY starts with sk_live_).
+    Active whenever CLERK_SECRET_KEY is set (works with both dev and live keys).
     In development Clerk hits FAPI directly — this returns 404.
     """
     secret_key = os.environ.get("CLERK_SECRET_KEY", "")
-    if not secret_key or not secret_key.startswith("sk_live"):
-        return JSONResponse(status_code=404, content={"detail": "Clerk proxy inactive in development"})
+    if not secret_key:
+        return JSONResponse(status_code=404, content={"detail": "Clerk proxy not configured — set CLERK_SECRET_KEY"})
 
     # Build target URL
     target_url = f"{CLERK_FAPI}/{path}"
@@ -123,8 +140,8 @@ async def clerk_proxy(path: str, request: Request):
     #      (e.g. "myapp.replit.app").  Strip any accidental scheme prefix.
     #   2. REPLIT_DEV_DOMAIN — bare hostname injected by the Replit platform.
     #
-    # Scheme: always "https".  The proxy is only active in production
-    # (sk_live_ key), which is always served over TLS.
+    # Scheme: always "https" in production; http allowed locally but
+    # the proxy is only reachable via HTTPS on the deployed domain.
     #
     # If neither env var is present we fail closed rather than falling back to
     # any request header — an unconfigured deployment should not silently proxy.
@@ -135,7 +152,12 @@ async def clerk_proxy(path: str, request: Request):
             _raw_clerk_host = _raw_clerk_host[len(_scheme):]
             break
 
-    trusted_host = _raw_clerk_host or _replit_domain
+    # Prefer (in order):
+    #   1. CLERK_PROXY_HOST — explicitly operator-configured hostname
+    #   2. REPLIT_DOMAINS   — production hostname injected by Replit autoscale
+    #   3. REPLIT_DEV_DOMAIN — dev hostname (fallback, only valid during dev)
+    _prod_hostname = _replit_prod_domains[0] if _replit_prod_domains else ""
+    trusted_host = _raw_clerk_host or _prod_hostname or _replit_domain
     if not trusted_host:
         return JSONResponse(
             status_code=500,

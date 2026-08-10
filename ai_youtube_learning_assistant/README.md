@@ -174,4 +174,16 @@ pnpm dev
 
 ---
 
+## 🔧 Recent Fixes & Improvements (August 2026)
+
+| Fix | Detail |
+|-----|--------|
+| **Clerk session drop (production)** | Clerk proxy on the backend was blocked when using development keys (`sk_test_`). Removed the `sk_live` restriction — proxy now works with any valid `CLERK_SECRET_KEY`, so sessions persist correctly in production. |
+| **Infinite spinner on `/app`** | `AppPage` now shows a branded loading spinner while Clerk initialises (instead of a white flash or immediate wrong redirect). Only redirects to `/` once `isLoaded=true` and user is confirmed signed-out. |
+| **OAuth redirect always lands on `/app`** | Changed `fallbackRedirectUrl` → `forceRedirectUrl` on `<SignIn>` and `<SignUp>` components + `ClerkProvider`. Post-OAuth redirect is now unconditional. |
+| **Dev preview host detection** | Added `127.0.0.1` and numeric-IP patterns to the dev-host list so the Clerk proxy is correctly skipped in the Replit workspace preview (which accesses the app via `127.0.0.1`). |
+| **Verification email spam hint** | Sign-up and sign-in verification screens now show: *"Check your spam/junk folder if the code doesn't arrive within a minute"* and a friendlier resend button. |
+
+---
+
 *Built as the capstone project of the AIML Internship Program at Zynvex Solutions, August 2026.*

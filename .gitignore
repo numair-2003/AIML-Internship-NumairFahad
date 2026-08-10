@@ -47,3 +47,24 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# ── LearnTube project source — tracked only inside ai_youtube_learning_assistant/ ──
+# Root-level copies exist for the Replit workspace but are not committed to GitHub.
+/artifacts/
+/backend/
+/chroma_db/
+/scripts/
+/attached_assets/
+/.agents/
+/main.py
+/package.json
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+/pyproject.toml
+/replit.md
+/threat_model.md
+/tsconfig.base.json
+/tsconfig.json
+/uv.lock
+/.npmrc
+/.replitignore
