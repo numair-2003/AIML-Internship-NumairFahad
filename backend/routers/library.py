@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db, Video, UserVideo
 from services.clerk_auth import require_auth
@@ -31,3 +31,25 @@ async def get_library(
         }
         for v in videos
     ]
+
+
+@router.delete("/{video_id}")
+async def remove_from_library(
+    video_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_auth),
+):
+    """Remove a video from the authenticated user's library (deletes UserVideo row)."""
+    user_id: str = user["sub"]
+
+    row = (
+        db.query(UserVideo)
+        .filter(UserVideo.user_id == user_id, UserVideo.video_id == video_id)
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Video not found in your library")
+
+    db.delete(row)
+    db.commit()
+    return {"ok": True}

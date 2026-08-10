@@ -38,6 +38,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # never used.  REPLIT_DEV_DOMAIN is set by the Replit platform; additional
 # origins can be supplied via the ALLOWED_ORIGINS env var (comma-separated).
 _replit_domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
+_replit_expo_domain = os.environ.get("REPLIT_EXPO_DEV_DOMAIN", "")
 _extra_origins = [
     o.strip()
     for o in os.environ.get("ALLOWED_ORIGINS", "").split(",")
@@ -47,6 +48,9 @@ _extra_origins = [
 _allowed_origins: list[str] = []
 if _replit_domain:
     _allowed_origins.append(f"https://{_replit_domain}")
+# Expo web preview runs on a separate subdomain — must be whitelisted explicitly.
+if _replit_expo_domain:
+    _allowed_origins.append(f"https://{_replit_expo_domain}")
 _allowed_origins.extend(_extra_origins)
 
 # Fall back to localhost for purely local development (no Replit env).

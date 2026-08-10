@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Animation presets for consistent motion language
 
 import type { Transition, Variants } from 'framer-motion';
@@ -180,22 +179,24 @@ export const elementAnimations = {
 } as const;
 
 // Character-level animation variants for kinetic typography
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const charVariants: Variants = {
   hidden: { opacity: 0, y: 40, rotateX: -40, transformPerspective: 800 },
+  // transition inside a variant conflicts with framer-motion's index sig; cast required
   visible: {
     opacity: 1,
     y: 0,
     rotateX: 0,
     transformPerspective: 800,
     transition: { type: 'spring', stiffness: 400, damping: 25 },
-  },
+  } as unknown as Variants[string],
 };
 
 export const charContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.03, delayChildren: 0.1 },
-  },
+  } as unknown as Variants[string],
 };
 
 // Stagger configs
@@ -214,7 +215,7 @@ export const containerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: staggerConfigs.medium,
-  },
+  } as unknown as Variants[string],
 };
 
 export const itemVariants: Variants = {
@@ -223,7 +224,7 @@ export const itemVariants: Variants = {
     opacity: 1,
     y: 0,
     transition: { duration: 0.5, ease: 'circOut' },
-  },
+  } as unknown as Variants[string],
 };
 
 // Utilities

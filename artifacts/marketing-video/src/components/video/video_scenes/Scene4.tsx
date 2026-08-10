@@ -10,15 +10,15 @@ export const Scene4 = () => {
       transition={{ duration: 1.5, ease: 'easeInOut' }}
     >
       <motion.div
-        className="text-center mb-[8vh]"
+        className="text-center mb-16"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <h2 className="text-[5.5vw] font-display font-bold mb-[1vh] leading-tight">
+        <h2 className="text-6xl font-display font-bold mb-4">
           Learn <span className="text-gradient">faster.</span>
         </h2>
-        <h2 className="text-[5.5vw] font-display font-bold leading-tight">
+        <h2 className="text-6xl font-display font-bold">
           Retain <span className="text-gradient text-[var(--color-secondary)]">more.</span>
         </h2>
       </motion.div>
@@ -29,19 +29,19 @@ export const Scene4 = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1, delay: 1.5 }}
       >
-        <div className="flex items-center gap-[1vw] mb-[2vh]">
-          <div className="w-[4vw] h-[4vw] rounded-[1vw] flex items-center justify-center bg-gradient-to-tr from-[#5a5fcf] to-[#7c3aed] shadow-[0_0_30px_rgba(90,95,207,0.5)]">
-            <svg className="w-[2vw] h-[2vw] text-white ml-[0.2vw]" fill="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-tr from-[#5a5fcf] to-[#7c3aed] shadow-[0_0_30px_rgba(90,95,207,0.5)]">
+            <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
-          <span className="text-[3vw] font-display font-bold tracking-tight">
+          <span className="text-4xl font-display font-bold tracking-tight">
             LearnTube
           </span>
         </div>
         
         <motion.div
-          className="text-[var(--color-accent)] font-mono tracking-widest uppercase text-[1vw] mt-[1vh] border border-[var(--color-accent)]/30 px-[1.5vw] py-[0.5vw] rounded-full"
+          className="text-[var(--color-accent)] font-mono tracking-widest uppercase text-sm mt-4 border border-[var(--color-accent)]/30 px-6 py-2 rounded-full"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 2.5 }}
