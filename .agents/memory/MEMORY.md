@@ -4,3 +4,4 @@
 - [Python 3.13 type union syntax](py313-type-union.md) — X | None in module-level var annotations requires Optional[X] from typing
 - [Intent classifier training](intent-classifier.md) — sklearn TF-IDF + LogisticRegression, 85% accuracy, model at backend/models/intent_classifier/classifier.pkl
 - [Backend working directory for production](backend-cwd.md) — main.py must os.chdir to its own directory for relative paths to work in production
+- [Clerk proxy production domain fix](clerk-proxy-production.md) — Clerk proxy must use REPLIT_DOMAINS (not REPLIT_DEV_DOMAIN) for Clerk-Proxy-Url; wrong domain → 400 → blank page

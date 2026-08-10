@@ -28,6 +28,9 @@ EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 INTENT_MODEL_PATH = "./models/intent_classifier"
 SQLITE_DB_PATH = "./app.db"
 
+[userenv.production]
+CLERK_PROXY_HOST = "ai-you-tube-assistant.replit.app"
+
 [nix]
 channel = "stable-25_05"
 packages = ["freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
