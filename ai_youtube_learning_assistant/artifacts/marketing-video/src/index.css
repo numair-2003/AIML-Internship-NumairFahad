@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Space Grotesk", sans-serif;
+  
+  --color-bg-dark: #080d1a;
+  --color-primary: #5a5fcf;
+  --color-secondary: #7c3aed;
+  --color-accent: #0891b2;
+  --color-text-main: #ffffff;
+  --color-text-muted: #94a3b8;
+}
+
+:root {
+  --color-bg-dark: #080d1a;
+  --color-primary: #5a5fcf;
+  --color-secondary: #7c3aed;
+  --color-accent: #0891b2;
+  --color-text-main: #ffffff;
+  --color-text-muted: #94a3b8;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-main);
+  margin: 0;
+  overflow: hidden;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glow-shadow {
+  box-shadow: 0 0 30px rgba(90, 95, 207, 0.4);
+}
