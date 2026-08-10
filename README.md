@@ -2,7 +2,28 @@
 
 Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National University of Technology (NUTECH), Islamabad**, currently working as an **AI/ML Intern at Zynvex Solutions**. This repository contains all my assignments, projects, and learning activities completed during the AI/ML Internship Program at Zynvex Solutions. I look forward to strengthening my Python, Machine Learning, and Deep Learning skills while building practical AI solutions throughout this internship.
 
-## 📂 Repository Contents
+---
+
+## 🚀 Capstone Project — LearnTube
+
+> **AI YouTube Learning Assistant** | Full-stack RAG application + Native Mobile App
+
+🌐 **Live App:** [ai-you-tube-assistant.replit.app](https://ai-you-tube-assistant.replit.app)
+📁 **Project Folder:** [`ai_youtube_learning_assistant/`](./ai_youtube_learning_assistant/)
+📄 **Project Report:** [`LearnTube_Project_Report.pdf`](./LearnTube_Project_Report.pdf)
+
+LearnTube transforms any YouTube video into an interactive learning experience — paste a URL and instantly get an AI-generated summary, quiz, flashcards, and a context-aware chat assistant grounded in the video transcript. Available on web and as a native iOS/Android app.
+
+| Stack | Technology |
+|-------|-----------|
+| Backend | FastAPI (Python 3.13), Google Gemini 2.0 Flash, ChromaDB, sentence-transformers |
+| Web Frontend | React 18, Vite 6, Tailwind CSS v4, Clerk Auth |
+| Mobile App | Expo 53, React Native 0.79, Clerk Auth |
+| Deployment | Autoscale (Replit), live at `ai-you-tube-assistant.replit.app` |
+
+---
+
+## 📂 Labs & Assignments
 
 | Lab / Assignment | Topic                                      | Status       | Key Files |
 |------------------|--------------------------------------------|--------------|-----------|
@@ -20,6 +41,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 | Lab 13           | Convolutional Neural Networks (CNNs)       | Completed    | `Lab 13_NumairFahad.ipynb`, `fashion_mnist_data/` |
 | Lab 14           | Recurrent Neural Networks (SimpleRNN/LSTM/GRU) | Completed | `Lab 14_NumairFahad.ipynb`, `imdb_data/` |
 | Assignment 03    | Customer Churn Prediction (Deep Learning)  | Completed    | `Assignment3_NumairFahad.ipynb`, `churn_model.keras`, `WA_Fn-UseC_-Telco-Customer-Churn.csv` |
+| **Capstone**     | **LearnTube — AI YouTube Learning Assistant** | **Completed** | [`ai_youtube_learning_assistant/`](./ai_youtube_learning_assistant/) |
 
 > More labs and assignments will be added as the internship progresses.
 
@@ -27,14 +49,17 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 ## 🛠️ Technologies & Tools
 
-- **Programming Language**: Python
-- **Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn, joblib, TensorFlow/Keras
-- **Environment**: Google Colab, Jupyter Notebook, VS Code
+- **Programming Language**: Python, TypeScript
+- **ML/AI Libraries**: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn, TensorFlow/Keras, sentence-transformers, ChromaDB, google-genai (Gemini)
+- **Web**: React 18, Vite 6, Tailwind CSS v4, FastAPI, SQLAlchemy
+- **Mobile**: Expo 53, React Native 0.79
+- **Auth**: Clerk (JWT + Google OAuth)
+- **Environment**: Google Colab, Jupyter Notebook, VS Code, Replit
 - **Version Control**: Git & GitHub
 
 ---
 
-## 📊 Cleaned Dataset
+## 📊 Datasets Used
 
 ### Lab 03 - Employee Records Dataset
 
@@ -145,12 +170,19 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 - Proper model evaluation using Precision, Recall, F1-Score, and Confusion Matrix
 - Saved and reused the trained model for predictions
 
+---
+
 ## 🚀 How to Use
 
 1. Clone this repository:
    ```bash
    git clone https://github.com/numair-2003/AIML-Internship-NumairFahad.git
-   
+   ```
+2. Open any `.ipynb` file in Jupyter Notebook, Google Colab, or VS Code.
+3. For the LearnTube capstone project, see [`ai_youtube_learning_assistant/README.md`](./ai_youtube_learning_assistant/README.md).
+
+---
+
 ## 👨‍💻 Author
 
 - **Name:** Numair Fahad
