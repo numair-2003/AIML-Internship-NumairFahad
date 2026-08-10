@@ -10,7 +10,7 @@ name = "API Server"
 paths = ["/api"]
 
 [services.development]
-run = "cd /home/runner/workspace && uv run python /home/runner/workspace/backend/main.py"
+run = "cd /home/runner/workspace/backend && python main.py"
 
 [services.production]
 
