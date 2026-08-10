@@ -7,7 +7,7 @@ chat message filtering.
 
 import asyncio
 import json
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db, Video, ChatMessage, Summary, Quiz, Flashcard, UserVideo
@@ -16,6 +16,7 @@ from services.summary_service import generate_and_store_summary
 from services.vectorstore_service import query_chunks
 from services.llm_service import rag_chat, generate_quiz, generate_flashcards
 from services.clerk_auth import require_auth
+from rate_limiter import limiter
 
 router = APIRouter()
 
@@ -55,7 +56,9 @@ def _ensure_user_video(db: Session, user_id: str, video_id: str) -> None:
 # ── Ingestion ────────────────────────────────────────────────────────────────
 
 @router.post("/process")
+@limiter.limit("10/minute")
 async def process_video_endpoint(
+    request: Request,
     req: ProcessRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
@@ -130,7 +133,9 @@ async def get_video(
 # ── Chat ─────────────────────────────────────────────────────────────────────
 
 @router.post("/{video_id}/chat")
+@limiter.limit("30/minute")
 async def chat(
+    request: Request,
     video_id: str,
     req: ChatRequest,
     db: Session = Depends(get_db),
@@ -289,7 +294,9 @@ async def clear_chat_history(
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 @router.get("/{video_id}/summary")
+@limiter.limit("20/minute")
 async def get_summary(
+    request: Request,
     video_id: str,
     db: Session = Depends(get_db),
     user: dict = Depends(require_auth),
@@ -331,7 +338,9 @@ async def get_summary(
 # ── Quiz ─────────────────────────────────────────────────────────────────────
 
 @router.get("/{video_id}/quiz")
+@limiter.limit("20/minute")
 async def get_quiz(
+    request: Request,
     video_id: str,
     db: Session = Depends(get_db),
     user: dict = Depends(require_auth),
@@ -374,7 +383,9 @@ async def get_quiz(
 # ── Flashcards ───────────────────────────────────────────────────────────────
 
 @router.get("/{video_id}/flashcards")
+@limiter.limit("20/minute")
 async def get_flashcards(
+    request: Request,
     video_id: str,
     db: Session = Depends(get_db),
     user: dict = Depends(require_auth),
