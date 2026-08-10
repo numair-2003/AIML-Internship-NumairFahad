@@ -39,6 +39,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # origins can be supplied via the ALLOWED_ORIGINS env var (comma-separated).
 _replit_domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
 _replit_expo_domain = os.environ.get("REPLIT_EXPO_DEV_DOMAIN", "")
+# REPLIT_DOMAINS is the production domain list (comma-separated), injected by
+# the Replit platform at runtime in autoscale deployments.
+_replit_prod_domains = [
+    d.strip()
+    for d in os.environ.get("REPLIT_DOMAINS", "").split(",")
+    if d.strip()
+]
 _extra_origins = [
     o.strip()
     for o in os.environ.get("ALLOWED_ORIGINS", "").split(",")
@@ -51,6 +58,12 @@ if _replit_domain:
 # Expo web preview runs on a separate subdomain — must be whitelisted explicitly.
 if _replit_expo_domain:
     _allowed_origins.append(f"https://{_replit_expo_domain}")
+# Production domains (e.g. myapp.replit.app) must also be in the allowlist so
+# that same-site production requests with credentials are accepted.
+for _prod_domain in _replit_prod_domains:
+    _prod_origin = f"https://{_prod_domain}"
+    if _prod_origin not in _allowed_origins:
+        _allowed_origins.append(_prod_origin)
 _allowed_origins.extend(_extra_origins)
 
 # Fall back to localhost for purely local development (no Replit env).
@@ -139,7 +152,12 @@ async def clerk_proxy(path: str, request: Request):
             _raw_clerk_host = _raw_clerk_host[len(_scheme):]
             break
 
-    trusted_host = _raw_clerk_host or _replit_domain
+    # Prefer (in order):
+    #   1. CLERK_PROXY_HOST — explicitly operator-configured hostname
+    #   2. REPLIT_DOMAINS   — production hostname injected by Replit autoscale
+    #   3. REPLIT_DEV_DOMAIN — dev hostname (fallback, only valid during dev)
+    _prod_hostname = _replit_prod_domains[0] if _replit_prod_domains else ""
+    trusted_host = _raw_clerk_host or _prod_hostname or _replit_domain
     if not trusted_host:
         return JSONResponse(
             status_code=500,
