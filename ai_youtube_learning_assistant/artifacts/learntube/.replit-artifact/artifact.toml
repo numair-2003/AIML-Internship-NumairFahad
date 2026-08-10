@@ -12,10 +12,10 @@ paths = [ "/" ]
 localPort = 22797
 
 [services.development]
-run = "pnpm --filter @workspace/learntube run dev"
+run = "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter @workspace/learntube run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/learntube", "run", "build" ]
+build = [ "sh", "-c", "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter @workspace/learntube run build" ]
 serve = "static"
 publicDir = "ai_youtube_learning_assistant/artifacts/learntube/dist/public"
 

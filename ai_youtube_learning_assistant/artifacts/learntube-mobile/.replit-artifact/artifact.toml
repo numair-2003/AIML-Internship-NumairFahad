@@ -13,11 +13,11 @@ paths = [ "/learntube-mobile/" ]
 localPort = 23719
 
 [services.development]
-run = "pnpm --filter @workspace/learntube-mobile run dev"
+run = "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter @workspace/learntube-mobile run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/learntube-mobile", "run", "build" ]
-run = [ "pnpm", "--filter", "@workspace/learntube-mobile", "run", "serve" ]
+build = [ "sh", "-c", "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter @workspace/learntube-mobile run build" ]
+run = [ "sh", "-c", "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter @workspace/learntube-mobile run serve" ]
 
 [services.env]
 PORT = "23719"

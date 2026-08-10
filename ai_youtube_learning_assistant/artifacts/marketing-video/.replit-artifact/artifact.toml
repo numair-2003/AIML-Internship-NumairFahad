@@ -10,7 +10,7 @@ paths = ["/marketing-video"]
 localPort = 22798
 
 [services.development]
-run = "pnpm --filter marketing-video run dev"
+run = "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter marketing-video run dev"
 
 [services.env]
 PORT = "22798"
