@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
@@ -18,7 +18,21 @@ const clerkPubKey = publishableKeyFromHost(
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
 
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+// In development (*.replit.dev / localhost), Clerk JS connects to FAPI directly —
+// the backend proxy returns 404 for dev keys so no proxy is needed.
+// In production (custom .replit.app domain), ALL Clerk requests MUST go through
+// the backend proxy at /api/__clerk so that session cookies are set for THIS
+// domain rather than frontend-api.clerk.dev (cross-site cookies are blocked by
+// browsers and cause the session to be dropped on every page load).
+const _isDevHost =
+  window.location.hostname === "localhost" ||
+  window.location.hostname.endsWith(".replit.dev") ||
+  window.location.hostname.endsWith(".repl.co");
+
+const clerkProxyUrl: string | undefined =
+  import.meta.env.VITE_CLERK_PROXY_URL ||
+  (_isDevHost ? undefined : `${window.location.origin}/api/__clerk`);
+
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {
@@ -129,6 +143,7 @@ function SignUpPage() {
 
 // ─── Workspace (authenticated) ───────────────────────────────────────────────
 function AppPage() {
+  const { isLoaded, isSignedIn } = useAuth();
   const { signOut } = useClerk();
   const { user } = useUser();
   const [, setLocation] = useLocation();
@@ -151,9 +166,30 @@ function AppPage() {
     setCurrentVideoId(null);
   }
 
+  // While Clerk is initialising (proxy round-trip) show a branded spinner
+  // instead of a white flash. Only redirect once we KNOW the user is signed out.
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#080d1a]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+              <Play className="h-4 w-4 text-white fill-white" />
+            </div>
+            <span className="font-bold text-lg"><span className="text-indigo-400">Learn</span><span className="text-white">Tube</span></span>
+          </div>
+          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <Redirect to="/" />;
+  }
+
   return (
-    <Show when="signed-in" fallback={<Redirect to="/" />}>
-      <div className="flex h-screen bg-[#080d1a] overflow-hidden relative">
+    <div className="flex h-screen bg-[#080d1a] overflow-hidden relative">
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
@@ -235,7 +271,6 @@ function AppPage() {
           )}
         </main>
       </div>
-    </Show>
   );
 }
 
