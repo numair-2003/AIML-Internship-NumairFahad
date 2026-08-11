@@ -2,7 +2,7 @@
 
 > **AIML Internship Capstone Project | Numair Fahad | August 2026**
 
-LearnTube transforms any YouTube video into a complete, interactive learning experience powered by Google Gemini and Retrieval-Augmented Generation (RAG). Available as a **live web app** and a **native mobile app** (iOS & Android).
+LearnTube transforms any YouTube video into a complete, interactive learning experience powered by Google Gemini and Retrieval-Augmented Generation (RAG). It is available as a **live web app** and a **native mobile app** (iOS and Android).
 
 🌐 **Live App:** [ai-you-tube-assistant.replit.app](https://ai-you-tube-assistant.replit.app)
 📄 **Project Report:** [`LearnTube_Project_Report.pdf`](../LearnTube_Project_Report.pdf)
