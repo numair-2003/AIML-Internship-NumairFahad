@@ -1,23 +1,23 @@
 #!/bin/bash
 # Production build script for the LearnTube API server.
 # Called by artifact.toml [services.production.build].
+#
+# We intentionally do NOT create a virtualenv here.
+# The build system removes build-time-only directories during cleanup
+# ("Removed N files") before snapshotting the Repl layer. Any .venv we
+# create would be wiped, leaving the production run command pointing at a
+# non-existent interpreter. Instead we use the workspace-managed
+# .pythonlibs Python, which is part of the committed workspace and is
+# always included in the Repl layer.
 set -e
 
 BACKEND=/home/runner/workspace/ai_youtube_learning_assistant/backend
-VENV=/home/runner/workspace/.venv
-PYTHON=$VENV/bin/python
-PIP=$VENV/bin/pip
+PYTHON=/home/runner/workspace/.pythonlibs/bin/python
 
-echo "=== [1/4] Creating virtualenv ==="
-python -m venv "$VENV"
-
-echo "=== [2/4] Installing Python dependencies ==="
-"$PIP" install --prefer-binary -r "$BACKEND/requirements.txt"
-
-echo "=== [3/4] Pre-downloading ChromaDB ONNX model into workspace ==="
+echo "=== [1/2] Pre-downloading ChromaDB ONNX model into workspace ==="
 # embedding_service.py patches ONNXMiniLM_L6_V2.DOWNLOAD_PATH to a path
-# inside the workspace so the model is baked into the container image.
-# Calling ef(['warmup']) here actually triggers the download/extraction.
+# inside the workspace so the model is baked into the Repl layer.
+# Calling ef(['warmup']) actually triggers the download/extraction.
 "$PYTHON" -c "
 import sys
 sys.path.insert(0, '$BACKEND')
@@ -27,11 +27,10 @@ ef(['warmup'])
 print('ONNX model is ready.')
 "
 
-echo "=== [4/4] Startup smoke test ==="
-# Start the API server on a spare port (9999) and verify /api/healthz → 200.
-# Port 8080 is already taken by the dev workflow so we use 9999 here.
-# If the server fails to start or returns non-200 the build fails immediately,
-# showing the exact error in the build log before the container is packaged.
+echo "=== [2/2] Startup smoke test ==="
+# Start the API server on port 9999 (port 8080 is taken by the dev workflow)
+# and verify /api/healthz returns 200 before the image is packaged.
+# If this fails, the build fails here with the full server log visible.
 cd "$BACKEND"
 PORT=9999 "$PYTHON" main.py >/tmp/api_smoke.log 2>&1 &
 SMOKE_PID=$!
@@ -42,7 +41,6 @@ sleep 30
 SMOKE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   http://localhost:9999/api/healthz 2>/dev/null || echo "000")
 
-# Always print the server log so failures are visible in the build output
 echo "--- server log ---"
 cat /tmp/api_smoke.log || true
 echo "------------------"
