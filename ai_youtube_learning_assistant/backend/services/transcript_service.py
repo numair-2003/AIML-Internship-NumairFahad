@@ -141,7 +141,7 @@ async def _fetch_via_invidious(video_id: str) -> list[dict]:
     for instance in _INVIDIOUS_INSTANCES:
         try:
             async with httpx.AsyncClient(
-                timeout=15, follow_redirects=True,
+                timeout=5, follow_redirects=True,
                 headers={"Accept": "application/json"},
             ) as client:
                 r = await client.get(f"{instance}/api/v1/captions/{video_id}")

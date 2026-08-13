@@ -178,12 +178,17 @@ pnpm dev
 
 | Fix | Detail |
 |-----|--------|
-| **Repo restructure** | All project files (`artifacts/`, `backend/`, `chroma_db/`) moved inside `ai_youtube_learning_assistant/`. `pnpm-workspace.yaml` and all `artifact.toml` / `tsconfig.json` paths updated accordingly. Nothing now lives at the repo root. |
-| **Clerk session drop (production)** | Clerk proxy on the backend was blocked when using development keys (`sk_test_`). Removed the `sk_live` restriction — proxy now works with any valid `CLERK_SECRET_KEY`, so sessions persist correctly in production. |
-| **Infinite spinner on `/app`** | `AppPage` now shows a branded loading spinner while Clerk initialises (instead of a white flash or immediate wrong redirect). Only redirects to `/` once `isLoaded=true` and user is confirmed signed-out. |
-| **OAuth redirect always lands on `/app`** | Changed `fallbackRedirectUrl` → `forceRedirectUrl` on `<SignIn>` and `<SignUp>` components + `ClerkProvider`. Post-OAuth redirect is now unconditional. |
-| **Dev preview host detection** | Added `127.0.0.1` and numeric-IP patterns to the dev-host list so the Clerk proxy is correctly skipped in the Replit workspace preview (which accesses the app via `127.0.0.1`). |
-| **Verification email spam hint** | Sign-up and sign-in verification screens now show: *"Check your spam/junk folder if the code doesn't arrive within a minute"* and a friendlier resend button. |
+| **Repo restructure** | All project files (`artifacts/`, `backend/`, `chroma_db/`) moved inside `ai_youtube_learning_assistant/`. `pnpm-workspace.yaml` and all `artifact.toml` / `tsconfig.json` paths updated accordingly. |
+| **Clerk session drop (production)** | Clerk proxy now works with any valid `CLERK_SECRET_KEY`; uses `REPLIT_DOMAINS` (not `REPLIT_DEV_DOMAIN`) for `Clerk-Proxy-Url` header. |
+| **Infinite spinner on `/app`** | `AppPage` shows a branded loading spinner while Clerk initialises; only redirects once `isLoaded=true`. |
+| **OAuth redirect** | `forceRedirectUrl` on `<SignIn>`/`<SignUp>` ensures post-OAuth lands on `/app` unconditionally. |
+| **Production startup** | `run_server.sh` resolves Python at runtime via `readlink -f`; falls back to Nix-store glob. `reload=False` on uvicorn prevents file-watcher startup hang. |
+| **Summary stuck loading** | `GET /api/videos/{id}/summary` now builds the summary directly from stored ChromaDB chunks instead of re-fetching the transcript from YouTube. Eliminates the 60-second timeout and error. |
+| **Quiz & Flashcards** | Same fix as summary — both endpoints auto-generate from ChromaDB chunks on first request. |
+| **Chat 500 error** | Returns HTTP 404 with a clear message when ChromaDB has no transcript data, instead of a generic 500. |
+| **YouTube IP block** | Transcript service has a 3-tier fallback (youtube-transcript-api → Invidious → yt-dlp + cookies). Set `YOUTUBE_PROXY_URL` or `YOUTUBE_COOKIES` env vars to enable cloud transcript fetching. |
+| **Vite proxy for /api** | Added `server.proxy` to `vite.config.ts` — `/api/*` requests now correctly reach the FastAPI backend in development, fixing the intermittent "Not Found" 404. |
+| **yt-dlp added** | Added `yt-dlp>=2026.7.4` to `pyproject.toml` for cookie-based transcript fallback. |
 
 ---
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Loader2, FileText, AlertCircle, Clock } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, FileText, AlertCircle, Clock, RefreshCw } from "lucide-react";
 import { api, Summary } from "@/api/client";
 import { CitationChip } from "./CitationChip";
 
@@ -17,29 +17,57 @@ export function SummaryPanel({ videoId }: SummaryPanelProps) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
+  const fetchSummary = () => {
     setLoading(true);
     setError(null);
     setSummary(null);
+    setElapsed(0);
+
+    // Tick elapsed seconds so user sees progress
+    timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
 
     api
       .getSummary(videoId)
       .then(setSummary)
       .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+      });
+  };
+
+  useEffect(() => {
+    fetchSummary();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 py-16">
+      <div className="flex flex-col items-center justify-center h-full gap-4 py-16 px-6 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <div className="text-center">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-            Generating summary…
+        <div>
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Generating AI summary…
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            This may take a moment for longer videos
+            {elapsed < 5
+              ? "Reading transcript…"
+              : elapsed < 20
+              ? "Analysing content…"
+              : elapsed < 40
+              ? "Writing summary…"
+              : "Almost there…"}
+            {elapsed > 0 && (
+              <span className="ml-1 tabular-nums text-slate-300">
+                ({elapsed}s)
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -48,22 +76,20 @@ export function SummaryPanel({ videoId }: SummaryPanelProps) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 py-16 px-6 text-center">
+      <div className="flex flex-col items-center justify-center h-full gap-4 py-16 px-6 text-center">
         <AlertCircle className="h-8 w-8 text-amber-500" />
-        <p className="text-sm text-slate-600 dark:text-slate-400">{error}</p>
+        <div>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Couldn't generate summary
+          </p>
+          <p className="text-xs text-slate-400 mt-1 max-w-xs">{error}</p>
+        </div>
         <button
-          onClick={() => {
-            setLoading(true);
-            setError(null);
-            api
-              .getSummary(videoId)
-              .then(setSummary)
-              .catch((e) => setError(e.message))
-              .finally(() => setLoading(false));
-          }}
-          className="text-xs text-primary underline"
+          onClick={fetchSummary}
+          className="flex items-center gap-1.5 text-xs text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors"
         >
-          Retry
+          <RefreshCw className="h-3.5 w-3.5" />
+          Try again
         </button>
       </div>
     );

@@ -97,6 +97,26 @@ def query_chunks(video_id: str, query_text: str, k: int = 5) -> list[dict]:
     return chunks
 
 
+def get_all_chunks(video_id: str) -> list[dict]:
+    """Return all stored chunks for a video, sorted by start_time."""
+    collection = get_or_create_collection(video_id)
+    count = collection.count()
+    if count == 0:
+        return []
+    results = collection.get(include=["documents", "metadatas"])
+    chunks = []
+    for doc, meta in zip(results["documents"], results["metadatas"]):
+        chunks.append(
+            {
+                "text": doc,
+                "start_time": float(meta.get("start_time", 0)),
+                "chunk_index": int(meta.get("chunk_index", 0)),
+            }
+        )
+    chunks.sort(key=lambda x: x["start_time"])
+    return chunks
+
+
 def delete_collection(video_id: str) -> None:
     """Remove the collection for a video (used when reprocessing)."""
     client = _get_client()

@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from database import get_db, Video, ChatMessage, Summary, Quiz, Flashcard, UserVideo
 from services.ingestion_service import process_video
 from services.summary_service import generate_and_store_summary
-from services.vectorstore_service import query_chunks
+from services.vectorstore_service import query_chunks, get_all_chunks, collection_exists
 from services.llm_service import rag_chat, generate_quiz, generate_flashcards
 from services.clerk_auth import require_auth
 from rate_limiter import limiter
@@ -204,8 +204,8 @@ async def chat(
     chunks = query_chunks(video_id, req.message, k=5)
     if not chunks:
         raise HTTPException(
-            status_code=500,
-            detail="No content chunks found for this video. Try reprocessing the video.",
+            status_code=404,
+            detail="This video's transcript data is no longer available. Please re-add the video.",
         )
 
     # Call LLM
@@ -310,23 +310,31 @@ async def get_summary(
 
     summary = db.query(Summary).filter(Summary.video_id == video_id).first()
     if not summary:
-        # Try to generate on-demand
-        from services.transcript_service import fetch_transcript
+        # Build summary from the already-stored ChromaDB chunks (fast — no YouTube needed)
+        if not collection_exists(video_id):
+            raise HTTPException(
+                status_code=404,
+                detail="No transcript data found for this video. Please re-add the video.",
+            )
+        chunk_dicts = get_all_chunks(video_id)
+        if not chunk_dicts:
+            raise HTTPException(
+                status_code=404,
+                detail="No transcript data found for this video. Please re-add the video.",
+            )
         try:
-            segments = await fetch_transcript(video_id)
-            chunk_dicts = [{"text": s["text"], "start_time": s["start"]} for s in segments]
             await asyncio.get_event_loop().run_in_executor(
                 None, generate_and_store_summary, video_id, chunk_dicts
             )
-            summary = db.query(Summary).filter(Summary.video_id == video_id).first()
-        except Exception:
+        except Exception as exc:
             raise HTTPException(
-                status_code=503,
-                detail="Summary is still generating — try again in a few seconds.",
+                status_code=500,
+                detail=f"Summary generation failed: {exc}",
             )
+        summary = db.query(Summary).filter(Summary.video_id == video_id).first()
 
     if not summary:
-        raise HTTPException(status_code=404, detail="Summary not yet available.")
+        raise HTTPException(status_code=503, detail="Summary generation failed. Please try again.")
 
     return {
         "overview": summary.overview,
@@ -354,13 +362,18 @@ async def get_quiz(
 
     quiz = db.query(Quiz).filter(Quiz.video_id == video_id).first()
     if not quiz:
-        # Generate on demand using summary
+        # Ensure summary exists (auto-generate from ChromaDB chunks if needed)
         summary = db.query(Summary).filter(Summary.video_id == video_id).first()
         if not summary:
-            raise HTTPException(
-                status_code=404,
-                detail="Summary not yet available. Please wait for it to generate first.",
+            chunks = get_all_chunks(video_id)
+            if not chunks:
+                raise HTTPException(status_code=404, detail="No transcript data found. Please re-add the video.")
+            await asyncio.get_event_loop().run_in_executor(
+                None, generate_and_store_summary, video_id, chunks
             )
+            summary = db.query(Summary).filter(Summary.video_id == video_id).first()
+        if not summary:
+            raise HTTPException(status_code=503, detail="Summary generation failed. Please try again.")
         try:
             questions = await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -399,13 +412,18 @@ async def get_flashcards(
 
     cards = db.query(Flashcard).filter(Flashcard.video_id == video_id).all()
     if not cards:
-        # Generate on demand using summary
+        # Ensure summary exists (auto-generate from ChromaDB chunks if needed)
         summary = db.query(Summary).filter(Summary.video_id == video_id).first()
         if not summary:
-            raise HTTPException(
-                status_code=404,
-                detail="Summary not yet available. Please wait for it to generate first.",
+            chunks = get_all_chunks(video_id)
+            if not chunks:
+                raise HTTPException(status_code=404, detail="No transcript data found. Please re-add the video.")
+            await asyncio.get_event_loop().run_in_executor(
+                None, generate_and_store_summary, video_id, chunks
             )
+            summary = db.query(Summary).filter(Summary.video_id == video_id).first()
+        if not summary:
+            raise HTTPException(status_code=503, detail="Summary generation failed. Please try again.")
         try:
             flashcard_data = await asyncio.get_event_loop().run_in_executor(
                 None,
