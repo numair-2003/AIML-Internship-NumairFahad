@@ -9,6 +9,7 @@ _BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(_BACKEND_DIR)
 sys.path.insert(0, _BACKEND_DIR)
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -22,10 +23,21 @@ from rate_limiter import limiter
 from database import init_db
 from routers import videos, library
 
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    init_db()
+    from services.intent_service import load_model
+    load_model()
+    print("LearnTube API started — database initialised.")
+    yield
+
+
 app = FastAPI(
     title="LearnTube API",
     description="AI YouTube Learning Assistant — RAG-powered Q&A, summaries, quizzes, and flashcards",
     version="1.0.0",
+    lifespan=_lifespan,
 )
 
 # ── Rate limiting ─────────────────────────────────────────────────────────────
@@ -207,14 +219,6 @@ async def clerk_proxy(path: str, request: Request):
         status_code=resp.status_code,
         headers=resp_headers,
     )
-
-
-@app.on_event("startup")
-async def startup():
-    init_db()
-    from services.intent_service import load_model
-    load_model()
-    print("LearnTube API started — database initialised.")
 
 
 if __name__ == "__main__":

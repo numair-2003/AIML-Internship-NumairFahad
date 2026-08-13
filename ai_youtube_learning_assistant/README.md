@@ -14,7 +14,7 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 | Feature | Description |
 |--------|-------------|
 | 🧠 **RAG Chat** | Ask questions about any video; answers are grounded in transcript chunks with `[MM:SS]` timestamp citations |
-| 📝 **AI Summary** | Auto-generated overview, key points, and inferred chapters |
+| 📝 **AI Summary** | Auto-generated overview, key points, and inferred chapters (Gemini Flash) |
 | ❓ **Quiz Generator** | 5–10 multiple-choice questions with explanations |
 | 🃏 **Flashcards** | 8–12 flip cards for spaced-repetition study |
 | 🔐 **Authentication** | Clerk-managed auth (Google OAuth + email/password + forgot password) |
@@ -34,11 +34,11 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
                            │ REST API (HTTPS)
 ┌──────────────────────────▼──────────────────────────────────┐
 │  FastAPI Backend (Python 3.13)                               │
-│  ├── Transcript Fetcher (youtube-transcript-api)             │
+│  ├── Transcript Fetcher (youtube-transcript-api + yt-dlp)    │
 │  ├── Chunker → Embedder (sentence-transformers)              │
 │  ├── ChromaDB Vector Store                                   │
 │  ├── Intent Classifier (sklearn TF-IDF + LR, ~85% accuracy) │
-│  └── LLM Orchestrator → Google Gemini 2.0 Flash             │
+│  └── LLM Orchestrator → Google Gemini Flash (gemini-flash-lite-latest)             │
 │  SQLite + SQLAlchemy (user library, video metadata)          │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -49,7 +49,7 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 
 **Backend**
 - Python 3.13, FastAPI, Uvicorn
-- `google-genai` SDK (Gemini 2.0 Flash)
+- `google-genai` SDK (Gemini Flash — `gemini-flash-lite-latest`)
 - ChromaDB (vector store), sentence-transformers (all-MiniLM-L6-v2)
 - SQLite + SQLAlchemy ORM
 - youtube-transcript-api, scikit-learn, PyJWT, slowapi
@@ -152,12 +152,12 @@ pnpm dev
 
 ## 🤖 RAG Pipeline
 
-1. **Fetch** — `youtube-transcript-api` pulls timestamped captions from any YouTube video
+1. **Fetch** — `youtube-transcript-api` (with Webshare proxy) + `yt-dlp` fallback fetch timestamped captions reliably from cloud IPs
 2. **Chunk** — Transcript split into ~200-word semantic chunks, each tagged with a start timestamp
-3. **Embed** — `all-MiniLM-L6-v2` generates a dense vector per chunk (local, no API cost)
+3. **Embed** — `all-MiniLM-L6-v2` generates a dense vector per chunk (local ONNX, no API cost)
 4. **Store** — Vectors stored in ChromaDB with chunk text and timestamp metadata
 5. **Retrieve** — User question → top-5 cosine-similar chunks via ChromaDB similarity search
-6. **Generate** — Chunks injected into Gemini 2.0 Flash prompt → grounded answer with `[MM:SS]` citations
+6. **Generate** — Chunks injected into Gemini Flash prompt → grounded answer with `[MM:SS]` citations
 
 ---
 
@@ -186,9 +186,15 @@ pnpm dev
 | **Summary stuck loading** | `GET /api/videos/{id}/summary` now builds the summary directly from stored ChromaDB chunks instead of re-fetching the transcript from YouTube. Eliminates the 60-second timeout and error. |
 | **Quiz & Flashcards** | Same fix as summary — both endpoints auto-generate from ChromaDB chunks on first request. |
 | **Chat 500 error** | Returns HTTP 404 with a clear message when ChromaDB has no transcript data, instead of a generic 500. |
-| **YouTube IP block** | Transcript service has a 3-tier fallback (youtube-transcript-api → Invidious → yt-dlp + cookies). Set `YOUTUBE_PROXY_URL` or `YOUTUBE_COOKIES` env vars to enable cloud transcript fetching. |
-| **Vite proxy for /api** | Added `server.proxy` to `vite.config.ts` — `/api/*` requests now correctly reach the FastAPI backend in development, fixing the intermittent "Not Found" 404. |
-| **yt-dlp added** | Added `yt-dlp>=2026.7.4` to `pyproject.toml` for cookie-based transcript fallback. |
+| **YouTube transcript via yt-dlp** | Transcript service now uses yt-dlp (without cookies) as the primary cloud-safe fallback — reliably fetches subtitles from most IPs. Set `YOUTUBE_PROXY_URL` (Webshare rotating residential) or `YOUTUBE_COOKIES` (browser export) for extra reliability. |
+| **Transcript lazy proxy init** | `_get_yta()` factory now rebuilds the `YouTubeTranscriptApi` instance when env vars change — picks up `YOUTUBE_PROXY_URL` set after server start. `WebshareProxyConfig` auto-detected from Webshare-format proxy URLs. |
+| **yt-dlp subtitle download** | yt-dlp writes subtitle files to disk (json3 format) via its native download mechanism — no URL re-fetch race condition. |
+| **Vite proxy for /api** | Added `server.proxy` to `vite.config.ts` — `/api/*` requests now correctly reach the FastAPI backend in development. |
+| **Gemini model updated** | Migrated from `gemini-2.0-flash` (deprecated/removed) to `gemini-flash-lite-latest`. All summary, quiz, flashcard, and RAG chat generation confirmed working. |
+| **FastAPI lifespan handler** | Replaced deprecated `@app.on_event("startup")` with `lifespan=` context manager — no more deprecation warnings in logs. |
+| **Background summary uses ChromaDB** | `process_video` background summary task now reads already-stored chunks from ChromaDB instead of re-fetching from YouTube — faster and works without a proxy. |
+| **ONNX model path (production fix)** | `vectorstore_service.py` patches `ONNXMiniLM_L6_V2.DOWNLOAD_PATH` at import time, directing the 90 MB embedding model into `backend/.chroma_onnx/` (included in the container image) instead of `~/.cache/` (wiped on deploy). |
+| **yt-dlp added** | Added `yt-dlp>=2026.7.4` to `pyproject.toml` for cloud-safe transcript fallback (works without cookies). |
 
 ---
 

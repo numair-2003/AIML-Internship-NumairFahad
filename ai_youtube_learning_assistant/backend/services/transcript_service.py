@@ -1,20 +1,26 @@
 """
 Fetches YouTube transcripts and video metadata.
 
-YouTube blocks direct API calls from cloud provider IPs (Replit, AWS, GCP, etc.).
-Two environment variables enable transcript fetching to work from cloud:
+YouTube blocks direct transcript requests from cloud provider IPs (Replit,
+AWS, GCP, etc.).  Two environment variables enable transcript fetching from
+cloud:
 
   YOUTUBE_PROXY_URL  — HTTP/HTTPS proxy URL, e.g. "http://user:pass@host:port"
-                       youtube-transcript-api routes through this proxy.
-                       Webshare.io free tier (10 proxies) works well.
+                       If this is a Webshare proxy URL the credentials are
+                       automatically extracted and used with WebshareProxyConfig
+                       (rotating residential endpoint) which is far more
+                       reliable than static datacenter proxies.
+
+  WEBSHARE_PROXY_USER / WEBSHARE_PROXY_PASS  — explicit Webshare credentials
+                       for WebshareProxyConfig (rotating residential proxies).
+                       Takes priority over YOUTUBE_PROXY_URL for yt-api.
 
   YOUTUBE_COOKIES    — Contents of a Netscape-format cookies.txt file exported
                        from your browser while logged into YouTube.
-                       Used by yt-dlp as a fallback when the primary fails.
+                       Used by yt-dlp as an extra fallback.
                        Export with: browser extension "Get cookies.txt LOCALLY".
 
-If neither is set the app still works — it will return a clear error explaining
-the cloud IP block rather than a cryptic "Not Found".
+yt-dlp is tried WITHOUT cookies as well (it often works from cloud IPs).
 """
 import os
 import re
@@ -28,27 +34,75 @@ from youtube_transcript_api import (
     IpBlocked,
 )
 
-# ── Configure YouTubeTranscriptApi ────────────────────────────────────────────
-_proxy_url = os.environ.get("YOUTUBE_PROXY_URL", "").strip()
-if _proxy_url:
-    from youtube_transcript_api.proxies import GenericProxyConfig
-    _yta = YouTubeTranscriptApi(
-        proxy_config=GenericProxyConfig(
-            http_url=_proxy_url,
-            https_url=_proxy_url,
-        )
-    )
-else:
-    _yta = YouTubeTranscriptApi()
-
 # ── Public Invidious instances to try as a fallback ───────────────────────────
-# NOTE: these are tried but may be unreachable from Replit cloud IPs.
 _INVIDIOUS_INSTANCES = [
     "https://invidious.io.lol",
     "https://invidious.nerdvpn.de",
     "https://yewtu.be",
     "https://inv.in.projectsegfau.lt",
 ]
+
+
+# ── Lazy YouTubeTranscriptApi factory ─────────────────────────────────────────
+# Built fresh on first call so it always picks up the current env vars
+# (important if secrets are set after the module was first imported).
+_yta_cache: "YouTubeTranscriptApi | None" = None
+_yta_proxy_key: str = ""   # tracks which proxy config was used
+
+
+def _get_yta() -> YouTubeTranscriptApi:
+    """
+    Return a (possibly cached) YouTubeTranscriptApi instance configured with
+    the best available proxy strategy based on current environment variables.
+
+    Priority:
+      1. WebshareProxyConfig (WEBSHARE_PROXY_USER + WEBSHARE_PROXY_PASS)
+      2. WebshareProxyConfig (credentials extracted from YOUTUBE_PROXY_URL when
+         the URL matches the Webshare p.webshare.io host pattern OR the proxy
+         username matches the rotating-credential pattern)
+      3. GenericProxyConfig  (YOUTUBE_PROXY_URL as a generic proxy)
+      4. No proxy (direct — will be blocked by YouTube from cloud IPs)
+    """
+    global _yta_cache, _yta_proxy_key
+
+    ws_user = os.environ.get("WEBSHARE_PROXY_USER", "").strip()
+    ws_pass = os.environ.get("WEBSHARE_PROXY_PASS", "").strip()
+    proxy_url = os.environ.get("YOUTUBE_PROXY_URL", "").strip()
+
+    # Cache key — rebuild the instance only when config changes
+    cache_key = f"{ws_user}|{ws_pass}|{proxy_url}"
+    if _yta_cache is not None and _yta_proxy_key == cache_key:
+        return _yta_cache
+
+    from youtube_transcript_api.proxies import GenericProxyConfig, WebshareProxyConfig
+
+    cfg = None
+
+    # 1. Explicit Webshare credentials env vars
+    if ws_user and ws_pass:
+        cfg = WebshareProxyConfig(proxy_username=ws_user, proxy_password=ws_pass)
+
+    # 2. Extract Webshare credentials from YOUTUBE_PROXY_URL
+    elif proxy_url:
+        m = re.match(r"https?://([^:]+):([^@]+)@(.+)", proxy_url)
+        if m:
+            u, p, host = m.group(1), m.group(2), m.group(3)
+            # If host is p.webshare.io or credentials look like Webshare ones
+            if "webshare.io" in host or re.match(r"^[a-z]{8}$", u):
+                cfg = WebshareProxyConfig(proxy_username=u, proxy_password=p)
+            else:
+                cfg = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url)
+        else:
+            cfg = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url)
+
+    # 4. No proxy
+    if cfg is not None:
+        _yta_cache = YouTubeTranscriptApi(proxy_config=cfg)
+    else:
+        _yta_cache = YouTubeTranscriptApi()
+
+    _yta_proxy_key = cache_key
+    return _yta_cache
 
 
 def extract_video_id(url: str) -> str | None:
@@ -169,72 +223,64 @@ async def _fetch_via_invidious(video_id: str) -> list[dict]:
     raise ValueError("invidious_exhausted")
 
 
-async def _fetch_via_ytdlp(video_id: str) -> list[dict]:
+async def _fetch_via_ytdlp(video_id: str, cookies_str: str = "") -> list[dict]:
     """
-    yt-dlp fallback — requires YOUTUBE_COOKIES env var to bypass bot detection.
-    Raises ValueError("ytdlp_no_cookies") if cookies are not configured.
+    yt-dlp fallback — works without cookies from most cloud IPs.
+    Uses yt-dlp's native subtitle download (writes json3 to /tmp) so we never
+    have to re-fetch URLs ourselves.  If YOUTUBE_COOKIES is provided it is used
+    as a Netscape cookies.txt for extra reliability.
     """
-    cookies_str = os.environ.get("YOUTUBE_COOKIES", "").strip()
-    if not cookies_str:
-        raise ValueError("ytdlp_no_cookies")
-
     try:
         import yt_dlp  # installed as optional dependency
     except ImportError:
         raise ValueError("ytdlp_not_installed")
 
-    import asyncio, concurrent.futures
+    import asyncio
+    import concurrent.futures
+    import glob
+    import json as _json
 
     def _run_ytdlp() -> list[dict]:
         cookie_file = None
-        try:
-            # Write cookies to a temp file
-            tf = tempfile.NamedTemporaryFile(
-                suffix=".txt", delete=False, mode="w"
-            )
-            tf.write(cookies_str)
-            tf.close()
-            cookie_file = tf.name
+        outdir = f"/tmp/yt_sub_{video_id}"
+        os.makedirs(outdir, exist_ok=True)
 
-            ydl_opts = {
+        try:
+            ydl_opts: dict = {
+                "writesubtitles": True,
+                "writeautomaticsub": True,
+                "subtitleslangs": ["en", "en-orig", "en-US"],
+                "subtitlesformat": "json3",
                 "skip_download": True,
-                "writesubtitles": False,
-                "writeautomaticsub": False,
+                "outtmpl": f"{outdir}/%(id)s",
                 "quiet": True,
                 "no_warnings": True,
-                "outtmpl": f"/tmp/yt_{video_id}",
-                "cookiefile": cookie_file,
             }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(
-                    f"https://www.youtube.com/watch?v={video_id}",
-                    download=False,
+
+            if cookies_str:
+                tf = tempfile.NamedTemporaryFile(
+                    suffix=".txt", delete=False, mode="w"
                 )
-            manual = info.get("subtitles", {})
-            auto = info.get("automatic_captions", {})
-            subs = (
-                manual.get("en")
-                or auto.get("en")
-                or auto.get("en-orig")
-                or next(iter(manual.values()), None)
-                or next(iter(auto.values()), None)
-            )
-            if not subs:
-                raise ValueError("No subtitles found via yt-dlp")
+                tf.write(cookies_str)
+                tf.close()
+                cookie_file = tf.name
+                ydl_opts["cookiefile"] = cookie_file
 
-            # Download the json3 format subtitle
-            json3 = next((f for f in subs if f.get("ext") == "json3"), subs[0])
-            sub_url = json3.get("url", "")
-            if not sub_url:
-                raise ValueError("No subtitle URL found")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
 
-            import httpx as _httpx
-            r = _httpx.get(sub_url, timeout=20)
-            if r.status_code != 200:
-                raise ValueError(f"Subtitle download failed: HTTP {r.status_code}")
+            # Find the downloaded json3 file(s)
+            files = sorted(glob.glob(f"{outdir}/*.json3"))
+            if not files:
+                raise ValueError("yt-dlp produced no subtitle files")
 
-            # Parse json3 format: {events: [{segs: [{utf8}], tStartMs, dDurationMs}]}
-            data = r.json()
+            # Parse the json3 subtitle format:
+            # {events: [{segs: [{utf8}], tStartMs, dDurationMs}]}
+            # Prefer .en.json3, else take the first file
+            chosen = next((f for f in files if ".en." in f), files[0])
+            with open(chosen, "r", encoding="utf-8") as fh:
+                data = _json.load(fh)
+
             segments = []
             for event in data.get("events", []):
                 t_start = event.get("tStartMs", 0) / 1000
@@ -242,16 +288,20 @@ async def _fetch_via_ytdlp(video_id: str) -> list[dict]:
                 parts = event.get("segs", [])
                 text = "".join(p.get("utf8", "") for p in parts).strip()
                 text = re.sub(r"\n", " ", text).strip()
-                if text and text != "♪":
+                if text and text not in ("♪", "♪♪♪", "[Music]"):
                     segments.append({
                         "text": text,
                         "start": t_start,
                         "duration": max(t_dur, 0.1),
                     })
             return segments
+
         finally:
             if cookie_file and os.path.exists(cookie_file):
                 os.unlink(cookie_file)
+            # Clean up downloaded subtitle files
+            import shutil
+            shutil.rmtree(outdir, ignore_errors=True)
 
     loop = asyncio.get_event_loop()
     with concurrent.futures.ThreadPoolExecutor() as pool:
@@ -263,39 +313,50 @@ async def fetch_transcript(video_id: str) -> list[dict]:
     Fetch transcript as [{text, start, duration}].
 
     Attempt order:
-      1. youtube-transcript-api  (fast; blocked from cloud IPs without proxy)
-      2. Invidious API            (different infra; often also blocked)
-      3. yt-dlp + cookies         (reliable if YOUTUBE_COOKIES is set)
+      1. youtube-transcript-api  (fast; uses WebshareProxyConfig if credentials
+                                  are available; blocked without proxy from cloud)
+      2. yt-dlp (no cookies)     (reliable from most IPs; yt-dlp is smarter
+                                  about bypassing bot detection)
+      3. yt-dlp (with cookies)   (extra reliability when YOUTUBE_COOKIES is set)
+      4. Invidious API            (usually blocked from Replit too; last resort)
 
-    On permanent failure raises ValueError with a user-friendly message that
-    explains what the operator needs to configure.
+    On permanent failure raises ValueError with a user-friendly message.
     """
     def _to_dicts(fetched) -> list[dict]:
         return [{"text": s.text, "start": s.start, "duration": s.duration} for s in fetched]
 
     ip_blocked = False
+    transcripts_disabled = False
+    yta = _get_yta()
 
-    # ── 1. youtube-transcript-api ─────────────────────────────────────────────
+    # ── 1. youtube-transcript-api (fast; uses proxy if configured) ────────────
+    # Catches all exceptions broadly so any proxy/network failure falls through
+    # to yt-dlp rather than surfacing a confusing RetryError to the user.
     try:
-        segs = _yta.fetch(video_id, languages=["en", "en-US", "en-GB", "en-CA", "en-AU"])
+        segs = yta.fetch(video_id, languages=["en", "en-US", "en-GB", "en-CA", "en-AU"])
         return _to_dicts(segs)
+    except TranscriptsDisabled:
+        transcripts_disabled = True
     except (RequestBlocked, IpBlocked):
         ip_blocked = True
-    except TranscriptsDisabled:
+    except NoTranscriptFound:
+        pass
+    except Exception:
+        # RetryError, ConnectionError, proxy auth failures, etc. — fall through
+        ip_blocked = True  # treat as blocked; yt-dlp may still succeed
+
+    if transcripts_disabled:
         raise ValueError(
             "This video has captions disabled — try a video with auto-generated "
             "or manual captions."
         )
-    except NoTranscriptFound:
-        pass
 
     if not ip_blocked:
+        # Try listing all available transcripts and picking any one
         try:
-            tlist = _yta.list(video_id)
+            tlist = yta.list(video_id)
             transcript = next(iter(tlist))
             return _to_dicts(transcript.fetch())
-        except (RequestBlocked, IpBlocked):
-            ip_blocked = True
         except TranscriptsDisabled:
             raise ValueError(
                 "This video has captions disabled — try a video with auto-generated "
@@ -303,38 +364,49 @@ async def fetch_transcript(video_id: str) -> list[dict]:
             )
         except StopIteration:
             raise ValueError("No transcript found for this video.")
+        except (RequestBlocked, IpBlocked):
+            ip_blocked = True
         except Exception:
-            pass
+            ip_blocked = True
 
-    # ── 2. Invidious fallback ─────────────────────────────────────────────────
+    # ── 2. yt-dlp WITHOUT cookies (works reliably from cloud IPs) ────────────
+    # yt-dlp uses its own request stack which bypasses youtube-transcript-api's
+    # proxy restrictions and handles YouTube's anti-bot measures better.
     try:
-        return await _fetch_via_invidious(video_id)
-    except ValueError:
-        pass  # Fall through to yt-dlp
+        segs = await _fetch_via_ytdlp(video_id, cookies_str="")
+        if segs:
+            return segs
+    except ValueError as e:
+        if str(e) not in ("ytdlp_not_installed",):
+            pass  # fall through to next
     except Exception:
         pass
 
-    # ── 3. yt-dlp + cookies fallback ─────────────────────────────────────────
+    # ── 3. yt-dlp WITH cookies (if YOUTUBE_COOKIES is set) ───────────────────
+    cookies_str = os.environ.get("YOUTUBE_COOKIES", "").strip()
+    if cookies_str:
+        try:
+            segs = await _fetch_via_ytdlp(video_id, cookies_str=cookies_str)
+            if segs:
+                return segs
+        except Exception:
+            pass
+
+    # ── 4. Invidious fallback ─────────────────────────────────────────────────
     try:
-        return await _fetch_via_ytdlp(video_id)
-    except ValueError as e:
-        err_key = str(e)
-        if err_key in ("ytdlp_no_cookies", "ytdlp_not_installed"):
-            pass  # Fall through to the final error
-        else:
-            raise ValueError(f"Transcript unavailable: {err_key}")
-    except Exception as e:
-        raise ValueError(f"Transcript fetch failed: {e}")
+        return await _fetch_via_invidious(video_id)
+    except Exception:
+        pass
 
     # ── All methods failed ────────────────────────────────────────────────────
     if ip_blocked:
         raise ValueError(
-            "YouTube is blocking transcript requests from this server's IP address "
-            "(a common restriction for cloud providers). "
-            "To fix this, set one of these environment variables in your Replit project:\n"
-            "• YOUTUBE_PROXY_URL — an HTTP/HTTPS proxy URL (e.g. from Webshare.io free tier)\n"
-            "• YOUTUBE_COOKIES  — contents of a cookies.txt file exported from your browser "
-            "while logged into YouTube (use the 'Get cookies.txt LOCALLY' browser extension)"
+            "Could not fetch the transcript — YouTube is blocking requests from "
+            "this server's IP (common for cloud providers). "
+            "yt-dlp was tried but also failed. "
+            "For guaranteed transcript fetching, set YOUTUBE_COOKIES "
+            "(export cookies.txt from your browser while logged into YouTube using "
+            "the 'Get cookies.txt LOCALLY' extension) as a Replit secret."
         )
     raise ValueError(
         "Could not fetch a transcript for this video. "

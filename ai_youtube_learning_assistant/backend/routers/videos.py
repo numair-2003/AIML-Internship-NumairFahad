@@ -81,24 +81,17 @@ async def process_video_endpoint(
     # Register ownership so this user can access the video
     _ensure_user_video(db, user_id, result["video_id"])
 
-    # Kick off background summary if the video was freshly processed
+    # Kick off background summary if the video was freshly processed.
+    # Use the already-stored ChromaDB chunks — no need to re-fetch from YouTube.
     if result.get("status") == "ready" and result.get("chunks_indexed"):
-        from services.transcript_service import fetch_transcript
         video_id = result["video_id"]
-        # Check if summary already exists
         existing_summary = db.query(Summary).filter(Summary.video_id == video_id).first()
         if not existing_summary:
-            try:
-                segments = await fetch_transcript(video_id)
-                chunk_dicts = [
-                    {"text": s["text"], "start_time": s["start"]}
-                    for s in segments
-                ]
+            chunk_dicts = get_all_chunks(video_id)
+            if chunk_dicts:
                 background_tasks.add_task(
                     generate_and_store_summary, video_id, chunk_dicts
                 )
-            except Exception:
-                pass  # Summary failure must not block the user from chatting
 
     return result
 

@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     gemini_api_key: str = os.environ.get("GEMINI_API_KEY", "")
-    gemini_model: str = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+    gemini_model: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     embedding_model: str = os.environ.get(
         "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
     )
