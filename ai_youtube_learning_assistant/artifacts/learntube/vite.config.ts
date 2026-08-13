@@ -72,6 +72,17 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Proxy /api requests to the FastAPI backend in development.
+    // Without this, fetch('/api/...') from the browser would be handled by
+    // Vite and return 404. In production, Replit's path-based router handles
+    // this routing; in dev, the proxy does it.
+    proxy: {
+      '/api': {
+        target: `http://localhost:${process.env.API_PORT ?? 8080}`,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   preview: {
     port,

@@ -61,7 +61,7 @@ async def process_video(url: str, db: Session) -> dict:
 
         # ── 5. Fetch transcript ──────────────────────────────────────────────
         # This raises ValueError with a user-friendly message if unavailable.
-        transcript_segments = fetch_transcript(video_id)
+        transcript_segments = await fetch_transcript(video_id)
 
         # ── 6. Chunk transcript ──────────────────────────────────────────────
         chunks = chunk_transcript(transcript_segments)

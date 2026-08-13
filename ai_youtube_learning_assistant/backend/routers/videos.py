@@ -89,7 +89,7 @@ async def process_video_endpoint(
         existing_summary = db.query(Summary).filter(Summary.video_id == video_id).first()
         if not existing_summary:
             try:
-                segments = fetch_transcript(video_id)
+                segments = await fetch_transcript(video_id)
                 chunk_dicts = [
                     {"text": s["text"], "start_time": s["start"]}
                     for s in segments
@@ -313,7 +313,7 @@ async def get_summary(
         # Try to generate on-demand
         from services.transcript_service import fetch_transcript
         try:
-            segments = fetch_transcript(video_id)
+            segments = await fetch_transcript(video_id)
             chunk_dicts = [{"text": s["text"], "start_time": s["start"]} for s in segments]
             await asyncio.get_event_loop().run_in_executor(
                 None, generate_and_store_summary, video_id, chunk_dicts
