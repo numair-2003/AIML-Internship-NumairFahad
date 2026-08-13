@@ -219,4 +219,9 @@ async def startup():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    # Never use reload=True in production — it spawns a file-watcher subprocess
+    # that scans thousands of container files and prevents the health check from
+    # responding within the startup probe timeout.  Use reload only in local dev
+    # (i.e. when REPL_ID is set but REPLIT_DEPLOYMENT is not).
+    _is_local_dev = bool(os.environ.get("REPL_ID")) and not bool(os.environ.get("REPLIT_DEPLOYMENT"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=_is_local_dev)

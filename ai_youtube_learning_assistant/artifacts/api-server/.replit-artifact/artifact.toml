@@ -15,7 +15,7 @@ run = "cd /home/runner/workspace/ai_youtube_learning_assistant/backend && python
 [services.production]
 
 [services.production.build]
-args = ["sh", "-c", "python -m venv /home/runner/workspace/.venv && /home/runner/workspace/.venv/bin/pip install --prefer-binary -r /home/runner/workspace/ai_youtube_learning_assistant/backend/requirements.txt"]
+args = ["sh", "-c", "python -m venv /home/runner/workspace/.venv && /home/runner/workspace/.venv/bin/pip install --prefer-binary -r /home/runner/workspace/ai_youtube_learning_assistant/backend/requirements.txt && /home/runner/workspace/.venv/bin/python -c \"from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; DefaultEmbeddingFunction()\" && echo 'ONNX model pre-downloaded'"]
 
 [services.production.run]
 args = ["/home/runner/workspace/.venv/bin/python", "/home/runner/workspace/ai_youtube_learning_assistant/backend/main.py"]
