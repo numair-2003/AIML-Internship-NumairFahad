@@ -18,7 +18,7 @@ run = "cd /home/runner/workspace/ai_youtube_learning_assistant/backend && python
 args = ["sh", "/home/runner/workspace/ai_youtube_learning_assistant/backend/scripts/build_prod.sh"]
 
 [services.production.run]
-args = ["/home/runner/workspace/.pythonlibs/bin/python", "/home/runner/workspace/ai_youtube_learning_assistant/backend/main.py"]
+args = ["sh", "/home/runner/workspace/ai_youtube_learning_assistant/backend/scripts/run_server.sh"]
 
 [services.production.health.startup]
 path = "/api/healthz"
