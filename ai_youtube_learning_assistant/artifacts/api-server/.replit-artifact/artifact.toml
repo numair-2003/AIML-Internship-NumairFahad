@@ -15,13 +15,10 @@ run = "cd /home/runner/workspace/ai_youtube_learning_assistant/backend && python
 [services.production]
 
 [services.production.build]
-args = ["sh", "-c", "python -m venv /home/runner/workspace/.venv && /home/runner/workspace/.venv/bin/pip install --prefer-binary -r /home/runner/workspace/ai_youtube_learning_assistant/backend/requirements.txt && /home/runner/workspace/.venv/bin/python -c \"from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; DefaultEmbeddingFunction()\" && echo 'ONNX model pre-downloaded'"]
+args = ["sh", "/home/runner/workspace/ai_youtube_learning_assistant/backend/scripts/build_prod.sh"]
 
 [services.production.run]
 args = ["/home/runner/workspace/.venv/bin/python", "/home/runner/workspace/ai_youtube_learning_assistant/backend/main.py"]
-
-[services.production.run.env]
-PORT = "8080"
 
 [services.production.health.startup]
 path = "/api/healthz"

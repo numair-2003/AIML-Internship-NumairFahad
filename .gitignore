@@ -60,3 +60,6 @@ pyproject.toml
 .agents/
 attached_assets/
 screenshots/
+
+# ChromaDB ONNX model (downloaded at build time into workspace)
+.chroma_onnx/
