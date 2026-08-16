@@ -95,8 +95,11 @@ app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
 app.include_router(library.router, prefix="/api/library", tags=["library"])
 
 
+@app.get("/api/health")
 @app.get("/api/healthz")
 async def health():
+    # Instant response — no DB, ChromaDB, ONNX, or Gemini dependency.
+    # Safe to call while lifespan startup tasks are still in progress.
     return {"status": "ok", "service": "LearnTube API"}
 
 
