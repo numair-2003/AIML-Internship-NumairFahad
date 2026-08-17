@@ -5,7 +5,7 @@ YouTube blocks direct transcript requests from cloud provider IPs (Replit,
 AWS, GCP, etc.).  Two environment variables enable transcript fetching from
 cloud:
 
-  YOUTUBE_PROXY_URL  — HTTP/HTTPS proxy URL, e.g. "http://user:pass@host:port"
+  YOUTUBE_URL  — HTTP/HTTPS proxy URL, e.g. "http://user:pass@host:port"
                        If this is a Webshare proxy URL the credentials are
                        automatically extracted and used with WebshareProxyConfig
                        (rotating residential endpoint) which is far more
@@ -13,7 +13,7 @@ cloud:
 
   WEBSHARE_PROXY_USER / WEBSHARE_PROXY_PASS  — explicit Webshare credentials
                        for WebshareProxyConfig (rotating residential proxies).
-                       Takes priority over YOUTUBE_PROXY_URL for yt-api.
+                       Takes priority over YOUTUBE_URL for yt-api.
 
   YOUTUBE_COOKIES    — Contents of a Netscape-format cookies.txt file exported
                        from your browser while logged into YouTube.
@@ -57,17 +57,17 @@ def _get_yta() -> YouTubeTranscriptApi:
 
     Priority:
       1. WebshareProxyConfig (WEBSHARE_PROXY_USER + WEBSHARE_PROXY_PASS)
-      2. WebshareProxyConfig (credentials extracted from YOUTUBE_PROXY_URL when
+      2. WebshareProxyConfig (credentials extracted from YOUTUBE_URL when
          the URL matches the Webshare p.webshare.io host pattern OR the proxy
          username matches the rotating-credential pattern)
-      3. GenericProxyConfig  (YOUTUBE_PROXY_URL as a generic proxy)
+      3. GenericProxyConfig  (YOUTUBE_URL as a generic proxy)
       4. No proxy (direct — will be blocked by YouTube from cloud IPs)
     """
     global _yta_cache, _yta_proxy_key
 
     ws_user = os.environ.get("WEBSHARE_PROXY_USER", "").strip()
     ws_pass = os.environ.get("WEBSHARE_PROXY_PASS", "").strip()
-    proxy_url = os.environ.get("YOUTUBE_PROXY_URL", "").strip()
+    proxy_url = os.environ.get("YOUTUBE_URL", "").strip()
 
     # Cache key — rebuild the instance only when config changes
     cache_key = f"{ws_user}|{ws_pass}|{proxy_url}"
@@ -82,7 +82,7 @@ def _get_yta() -> YouTubeTranscriptApi:
     if ws_user and ws_pass:
         cfg = WebshareProxyConfig(proxy_username=ws_user, proxy_password=ws_pass)
 
-    # 2. Extract Webshare credentials from YOUTUBE_PROXY_URL
+    # 2. Extract Webshare credentials from YOUTUBE_URL
     elif proxy_url:
         m = re.match(r"https?://([^:]+):([^@]+)@(.+)", proxy_url)
         if m:
