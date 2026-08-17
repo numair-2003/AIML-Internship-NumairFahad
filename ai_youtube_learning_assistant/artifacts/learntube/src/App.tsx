@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser, useAuth } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, useClerk, useUser, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
@@ -279,15 +279,33 @@ function AppPage() {
 
 // ─── Home route (public landing or redirect) ─────────────────────────────────
 function HomeRoute() {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#080d1a]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+              <Play className="h-4 w-4 text-white fill-white" />
+            </div>
+            <span className="font-bold text-lg">
+              <span className="text-indigo-400">Learn</span>
+              <span className="text-white">Tube</span>
+            </span>
+          </div>
+          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isSignedIn) {
+    return <Redirect to="/app" />;
+  }
+
   return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/app" />
-      </Show>
-      <Show when="signed-out">
-        <HomePage />
-      </Show>
-    </>
+    <HomePage />
   );
 }
 

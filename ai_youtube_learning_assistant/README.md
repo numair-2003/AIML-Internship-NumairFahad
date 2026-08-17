@@ -84,8 +84,7 @@ ai_youtube_learning_assistant/   ← this folder (monorepo root symlink)
 │       ├── llm_service.py        # Gemini calls (RAG, summary, quiz, flashcards)
 │       ├── transcript_service.py # YouTube transcript fetching
 │       ├── chunking_service.py   # Semantic chunking with timestamps
-│       ├── embedding_service.py  # sentence-transformers embeddings
-│       ├── vectorstore_service.py# ChromaDB operations
+│       ├── vectorstore_service.py # ChromaDB operations + ONNX embeddings
 │       ├── ingestion_service.py  # Full pipeline orchestrator
 │       ├── summary_service.py    # Summary persistence
 │       ├── intent_service.py     # Query intent classification

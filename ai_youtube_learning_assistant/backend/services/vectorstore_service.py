@@ -3,11 +3,11 @@ ChromaDB vector store — one collection per video, keyed as `video_<id>`.
 Uses ChromaDB's built-in DefaultEmbeddingFunction (all-MiniLM-L6-v2 via ONNX)
 so no separate embedding step is needed.
 
-IMPORTANT: embedding_service must be imported before chromadb / DefaultEmbeddingFunction
-so the ONNX DOWNLOAD_PATH patch is applied first — this directs the 90 MB model
-into the workspace directory (backend/.chroma_onnx/) which is included in the
-production container image.  Without this, the model goes to ~/.cache/chroma/
-which is NOT snapshotted, causing a slow cold-start download on every deploy.
+The ONNX DOWNLOAD_PATH patch below runs before chromadb / DefaultEmbeddingFunction
+is imported — this directs the 90 MB model into the workspace directory
+(backend/.chroma_onnx/) which is included in the production container image.
+Without this, the model goes to ~/.cache/chroma/ which is NOT snapshotted,
+causing a slow cold-start download on every deploy.
 """
 
 import os

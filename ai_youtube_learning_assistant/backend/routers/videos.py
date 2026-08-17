@@ -374,9 +374,16 @@ async def get_quiz(
                 summary.overview,
                 json.loads(summary.key_points_json),
             )
+            if not questions:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Quiz generation returned no questions. Please try again.",
+                )
             quiz = Quiz(video_id=video_id, questions_json=json.dumps(questions))
             db.add(quiz)
             db.commit()
+        except HTTPException:
+            raise
         except Exception as e:
             err = str(e)
             if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():

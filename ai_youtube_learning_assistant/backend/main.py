@@ -28,10 +28,16 @@ from routers import videos, library
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     init_db()
-    from services.intent_service import load_model
-    # Do not block ASGI startup on the optional intent classifier. The task is
-    # scheduled here and runs while the lifespan yields to serve requests.
-    asyncio.create_task(asyncio.to_thread(load_model))
+    async def _load_intent_classifier() -> None:
+        # Let ASGI finish startup and begin serving before doing optional model
+        # work. Code after lifespan yield runs at shutdown, so the task is
+        # scheduled before yield but its actual load_model() call starts after
+        # this coroutine yields control back to the event loop.
+        await asyncio.sleep(0)
+        from services.intent_service import load_model
+        await asyncio.to_thread(load_model)
+
+    asyncio.create_task(_load_intent_classifier())
     print("LearnTube API started — database initialised.")
     yield
 

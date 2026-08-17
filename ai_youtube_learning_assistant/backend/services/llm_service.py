@@ -7,9 +7,12 @@ from typing import Optional
 from google import genai
 from google.genai import types
 import json
+import logging
 import re
 from config import settings
 from services.chunking_service import format_timestamp
+
+logger = logging.getLogger(__name__)
 
 # Lazy singleton client
 _client: Optional[genai.Client] = None
@@ -59,6 +62,33 @@ def _strip_fences(text: str) -> str:
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
     return text.strip()
+
+
+def _retry_json_response(
+    client: genai.Client,
+    prompt: str,
+    system_instruction: str,
+    max_tokens: int,
+    previous_text: str,
+):
+    """Ask Gemini once more for JSON after an invalid JSON response."""
+    retry_prompt = f"""\
+{prompt}
+
+Your previous response was not valid JSON. Return the JSON value only
+(no markdown fences, explanation, or other text). The required JSON shape is
+described above. Previous response:
+{previous_text}
+"""
+    return client.models.generate_content(
+        model=settings.gemini_model,
+        contents=retry_prompt,
+        config=_make_config(
+            system_instruction=system_instruction,
+            max_tokens=max_tokens,
+            json_mode=True,
+        ),
+    )
 
 
 def _parse_citations(answer_text: str) -> list[dict]:
@@ -202,10 +232,24 @@ Transcript:
         config=_make_config(system_instruction=SUMMARY_SYSTEM_PROMPT, max_tokens=2048, json_mode=True),
     )
 
+    raw_text = response.text
     try:
-        data = json.loads(_strip_fences(response.text))
+        data = json.loads(_strip_fences(raw_text))
     except json.JSONDecodeError:
-        data = {}
+        logger.warning("Gemini returned invalid summary JSON: %s", raw_text)
+        retry_response = _retry_json_response(
+            client,
+            prompt,
+            SUMMARY_SYSTEM_PROMPT,
+            2048,
+            raw_text,
+        )
+        retry_text = retry_response.text
+        try:
+            data = json.loads(_strip_fences(retry_text))
+        except json.JSONDecodeError:
+            logger.warning("Gemini retry returned invalid summary JSON: %s", retry_text)
+            data = {}
 
     return {
         "overview": data.get("overview", ""),
@@ -249,10 +293,24 @@ Key points:
         config=_make_config(system_instruction=QUIZ_SYSTEM_PROMPT, max_tokens=3000, json_mode=True),
     )
 
+    raw_text = response.text
     try:
-        return json.loads(_strip_fences(response.text))
+        return json.loads(_strip_fences(raw_text))
     except json.JSONDecodeError:
-        return []
+        logger.warning("Gemini returned invalid quiz JSON: %s", raw_text)
+        retry_response = _retry_json_response(
+            client,
+            prompt,
+            QUIZ_SYSTEM_PROMPT,
+            3000,
+            raw_text,
+        )
+        retry_text = retry_response.text
+        try:
+            return json.loads(_strip_fences(retry_text))
+        except json.JSONDecodeError:
+            logger.warning("Gemini retry returned invalid quiz JSON: %s", retry_text)
+            return []
 
 
 def generate_flashcards(overview: str, key_points: list[str]) -> list[dict]:
@@ -289,7 +347,21 @@ Key points:
         config=_make_config(system_instruction=FLASHCARD_SYSTEM_PROMPT, max_tokens=2000, json_mode=True),
     )
 
+    raw_text = response.text
     try:
-        return json.loads(_strip_fences(response.text))
+        return json.loads(_strip_fences(raw_text))
     except json.JSONDecodeError:
-        return []
+        logger.warning("Gemini returned invalid flashcards JSON: %s", raw_text)
+        retry_response = _retry_json_response(
+            client,
+            prompt,
+            FLASHCARD_SYSTEM_PROMPT,
+            2000,
+            raw_text,
+        )
+        retry_text = retry_response.text
+        try:
+            return json.loads(_strip_fences(retry_text))
+        except json.JSONDecodeError:
+            logger.warning("Gemini retry returned invalid flashcards JSON: %s", retry_text)
+            return []
