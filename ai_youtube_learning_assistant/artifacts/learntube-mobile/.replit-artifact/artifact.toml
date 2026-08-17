@@ -18,3 +18,6 @@ run = "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter 
 [services.env]
 PORT = "23719"
 BASE_PATH = "/learntube-mobile/"
+
+[services.production]
+run = [ "sh", "-c", "exit 0" ]
