@@ -36,6 +36,7 @@ LearnTube transforms any YouTube video into an interactive learning experience â
 | Lab 10           | Feature Engineering                        | Completed    | `Lab 10_NumairFahad.ipynb`, `tips.csv` |
 | Assignment 02    | Insurance Cost Prediction â€“ End-to-End Regression Project | Completed | `Assignment2_NumairFahad.ipynb`, `insurance_model.joblib` |
 | Lab 11           | Neural Network Fundamentals                | Completed    | `Lab 11_NumairFahad.ipynb`, `wine.csv` |
+| Lab 12           | Neural Networks for Image Classification (Dense) | Completed | `Lab 12_NumairFahad.ipynb` |
 | Lab 13           | Convolutional Neural Networks (CNNs)       | Completed    | `Lab 13_NumairFahad.ipynb`, `fashion_mnist_data/` |
 | Lab 14           | Recurrent Neural Networks (SimpleRNN/LSTM/GRU) | Completed | `Lab 14_NumairFahad.ipynb`, `imdb_data/` |
 | Assignment 03    | Customer Churn Prediction (Deep Learning)  | Completed    | `Assignment3_NumairFahad.ipynb`, `churn_model.keras`, `WA_Fn-UseC_-Telco-Customer-Churn.csv` |

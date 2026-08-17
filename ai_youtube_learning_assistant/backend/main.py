@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 
 # Ensure working directory is always the backend folder so that relative paths
 # (SQLite ./app.db, ChromaDB ./chroma_db, ./models/...) resolve correctly
@@ -28,7 +29,9 @@ from routers import videos, library
 async def _lifespan(app: FastAPI):
     init_db()
     from services.intent_service import load_model
-    load_model()
+    # Do not block ASGI startup on the optional intent classifier. The task is
+    # scheduled here and runs while the lifespan yields to serve requests.
+    asyncio.create_task(asyncio.to_thread(load_model))
     print("LearnTube API started — database initialised.")
     yield
 
