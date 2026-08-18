@@ -124,6 +124,9 @@ pip install -r requirements.txt
 # GEMINI_API_KEY=your_key
 # CLERK_SECRET_KEY=your_clerk_secret_key
 # SESSION_SECRET=any_random_string
+# YOUTUBE_COOKIES=contents of a Netscape-format cookies.txt export
+# YOUTUBE_PROXY_URL=legacy proxy alias (optional)
+# YOUTUBE_URL=http://user:pass@host:port
 python main.py
 ```
 
@@ -183,7 +186,7 @@ pnpm dev
 | **Quiz & Flashcards** | Same fix as summary — both endpoints auto-generate from ChromaDB chunks on first request. |
 | **Chat 500 error** | Returns HTTP 404 with a clear message when ChromaDB has no transcript data, instead of a generic 500. |
 | **YouTube transcript via yt-dlp** | Transcript service now uses yt-dlp (without cookies) as the primary cloud-safe fallback — reliably fetches subtitles from most IPs. Set `YOUTUBE_URL` (Webshare rotating residential proxy URL) or `YOUTUBE_COOKIES` (browser export) for extra reliability. |
-| **Transcript lazy proxy init** | `_get_yta()` factory now rebuilds the `YouTubeTranscriptApi` instance when env vars change — picks up `YOUTUBE_URL` set after server start. `WebshareProxyConfig` auto-detected from Webshare-format proxy URLs. |
+| **Transcript lazy proxy init** | `_get_yta()` factory now rebuilds the `YouTubeTranscriptApi` instance when env vars change — picks up `YOUTUBE_URL` set after server start. `YOUTUBE_PROXY_URL` remains a legacy proxy alias. `WebshareProxyConfig` auto-detected from Webshare-format proxy URLs. |
 | **yt-dlp subtitle download** | yt-dlp writes subtitle files to disk (json3 format) via its native download mechanism — no URL re-fetch race condition. |
 | **Vite proxy for /api** | Added `server.proxy` to `vite.config.ts` — `/api/*` requests now correctly reach the FastAPI backend in development. |
 | **Gemini model updated** | Migrated from `gemini-2.0-flash` (deprecated/removed) to `gemini-flash-lite-latest`. All summary, quiz, flashcard, and RAG chat generation confirmed working. |

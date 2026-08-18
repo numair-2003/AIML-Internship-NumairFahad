@@ -64,3 +64,9 @@ screenshots/
 # ChromaDB ONNX model (downloaded at build time into workspace)
 .chroma_onnx/
 chroma_db/
+
+# Runtime-only YouTube cookies and subtitle downloads
+*youtube-cookies-*.txt
+cookies*.txt
+yt_sub_*/
+*.json3

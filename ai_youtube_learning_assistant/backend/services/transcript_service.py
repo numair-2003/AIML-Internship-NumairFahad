@@ -5,11 +5,9 @@ YouTube blocks direct transcript requests from cloud provider IPs (Replit,
 AWS, GCP, etc.).  Two environment variables enable transcript fetching from
 cloud:
 
-  YOUTUBE_URL  — HTTP/HTTPS proxy URL, e.g. "http://user:pass@host:port"
-                       If this is a Webshare proxy URL the credentials are
-                       automatically extracted and used with WebshareProxyConfig
-                       (rotating residential endpoint) which is far more
-                       reliable than static datacenter proxies.
+  YOUTUBE_URL  — HTTP/HTTPS proxy URL, e.g. "http://user:pass@host:port".
+                 This is the canonical proxy secret name. If it is not set,
+                 the legacy YOUTUBE_PROXY_URL alias is used.
 
   WEBSHARE_PROXY_USER / WEBSHARE_PROXY_PASS  — explicit Webshare credentials
                        for WebshareProxyConfig (rotating residential proxies).
@@ -17,7 +15,8 @@ cloud:
 
   YOUTUBE_COOKIES    — Contents of a Netscape-format cookies.txt file exported
                        from your browser while logged into YouTube.
-                       Used by yt-dlp as an extra fallback.
+                        Written to a runtime-only Netscape cookies.txt file and
+                        passed to both transcript clients.
                        Export with: browser extension "Get cookies.txt LOCALLY".
 
 yt-dlp is tried WITHOUT cookies as well (it often works from cloud IPs).
@@ -25,7 +24,10 @@ yt-dlp is tried WITHOUT cookies as well (it often works from cloud IPs).
 import os
 import re
 import tempfile
+import hashlib
+import http.cookiejar
 import httpx
+import requests
 from youtube_transcript_api import (
     YouTubeTranscriptApi,
     TranscriptsDisabled,
@@ -47,30 +49,71 @@ _INVIDIOUS_INSTANCES = [
 # Built fresh on first call so it always picks up the current env vars
 # (important if secrets are set after the module was first imported).
 _yta_cache: "YouTubeTranscriptApi | None" = None
-_yta_proxy_key: str = ""   # tracks which proxy config was used
+_yta_proxy_key: str = ""   # tracks which proxy/cookie config was used
 
 
-def _get_yta() -> YouTubeTranscriptApi:
+def _get_proxy_url() -> str:
+    """Return the canonical proxy secret, with the legacy alias as fallback."""
+    return (
+        os.environ.get("YOUTUBE_URL", "").strip()
+        or os.environ.get("YOUTUBE_PROXY_URL", "").strip()
+    )
+
+
+def _write_runtime_cookie_file(cookies_str: str) -> str | None:
+    """Write secret cookie contents to a private, temporary Netscape file."""
+    if not cookies_str:
+        return None
+
+    fd, path = tempfile.mkstemp(
+        prefix="learntube-youtube-cookies-",
+        suffix=".txt",
+        dir="/tmp",
+        text=True,
+    )
+    os.chmod(path, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as cookie_file:
+        cookie_file.write(cookies_str)
+    return path
+
+
+def _cookie_session(cookie_file: str | None) -> requests.Session | None:
+    """Load a Netscape cookie file into the youtube-transcript-api session."""
+    if not cookie_file:
+        return None
+
+    session = requests.Session()
+    jar = http.cookiejar.MozillaCookieJar(cookie_file)
+    jar.load(ignore_discard=True, ignore_expires=True)
+    session.cookies = jar
+    return session
+
+
+def _get_yta(
+    cookie_file: str | None = None,
+    cookies_fingerprint: str = "",
+) -> YouTubeTranscriptApi:
     """
     Return a (possibly cached) YouTubeTranscriptApi instance configured with
     the best available proxy strategy based on current environment variables.
 
     Priority:
       1. WebshareProxyConfig (WEBSHARE_PROXY_USER + WEBSHARE_PROXY_PASS)
-      2. WebshareProxyConfig (credentials extracted from YOUTUBE_URL when
+       2. WebshareProxyConfig (credentials extracted from YOUTUBE_URL or
+          legacy YOUTUBE_PROXY_URL when
          the URL matches the Webshare p.webshare.io host pattern OR the proxy
          username matches the rotating-credential pattern)
-      3. GenericProxyConfig  (YOUTUBE_URL as a generic proxy)
+       3. GenericProxyConfig  (the selected proxy URL as a generic proxy)
       4. No proxy (direct — will be blocked by YouTube from cloud IPs)
     """
     global _yta_cache, _yta_proxy_key
 
     ws_user = os.environ.get("WEBSHARE_PROXY_USER", "").strip()
     ws_pass = os.environ.get("WEBSHARE_PROXY_PASS", "").strip()
-    proxy_url = os.environ.get("YOUTUBE_URL", "").strip()
+    proxy_url = _get_proxy_url()
 
     # Cache key — rebuild the instance only when config changes
-    cache_key = f"{ws_user}|{ws_pass}|{proxy_url}"
+    cache_key = f"{ws_user}|{ws_pass}|{proxy_url}|{cookies_fingerprint}"
     if _yta_cache is not None and _yta_proxy_key == cache_key:
         return _yta_cache
 
@@ -82,7 +125,7 @@ def _get_yta() -> YouTubeTranscriptApi:
     if ws_user and ws_pass:
         cfg = WebshareProxyConfig(proxy_username=ws_user, proxy_password=ws_pass)
 
-    # 2. Extract Webshare credentials from YOUTUBE_URL
+    # 2. Extract Webshare credentials from the selected proxy URL
     elif proxy_url:
         m = re.match(r"https?://([^:]+):([^@]+)@(.+)", proxy_url)
         if m:
@@ -96,10 +139,14 @@ def _get_yta() -> YouTubeTranscriptApi:
             cfg = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url)
 
     # 4. No proxy
+    http_client = _cookie_session(cookie_file)
     if cfg is not None:
-        _yta_cache = YouTubeTranscriptApi(proxy_config=cfg)
+        _yta_cache = YouTubeTranscriptApi(
+            proxy_config=cfg,
+            http_client=http_client,
+        )
     else:
-        _yta_cache = YouTubeTranscriptApi()
+        _yta_cache = YouTubeTranscriptApi(http_client=http_client)
 
     _yta_proxy_key = cache_key
     return _yta_cache
@@ -223,12 +270,18 @@ async def _fetch_via_invidious(video_id: str) -> list[dict]:
     raise ValueError("invidious_exhausted")
 
 
-async def _fetch_via_ytdlp(video_id: str, cookies_str: str = "") -> list[dict]:
+async def _fetch_via_ytdlp(
+    video_id: str,
+    cookies_str: str = "",
+    cookie_file: str | None = None,
+    proxy_url: str | None = None,
+) -> list[dict]:
     """
     yt-dlp fallback — works without cookies from most cloud IPs.
     Uses yt-dlp's native subtitle download (writes json3 to /tmp) so we never
-    have to re-fetch URLs ourselves.  If YOUTUBE_COOKIES is provided it is used
-    as a Netscape cookies.txt for extra reliability.
+    have to re-fetch URLs ourselves. If YOUTUBE_COOKIES is provided, its
+    runtime cookie file is passed as ``cookiefile``. The selected proxy is
+    passed as ``proxy``.
     """
     try:
         import yt_dlp  # installed as optional dependency
@@ -241,11 +294,18 @@ async def _fetch_via_ytdlp(video_id: str, cookies_str: str = "") -> list[dict]:
     import json as _json
 
     def _run_ytdlp() -> list[dict]:
-        cookie_file = None
+        owned_cookie_file = None
         outdir = f"/tmp/yt_sub_{video_id}"
         os.makedirs(outdir, exist_ok=True)
 
         try:
+            effective_cookie_file = cookie_file
+            if cookies_str and not effective_cookie_file:
+                owned_cookie_file = _write_runtime_cookie_file(cookies_str)
+                effective_cookie_file = owned_cookie_file
+            effective_proxy_url = (
+                _get_proxy_url() if proxy_url is None else proxy_url.strip()
+            )
             ydl_opts: dict = {
                 "writesubtitles": True,
                 "writeautomaticsub": True,
@@ -257,14 +317,10 @@ async def _fetch_via_ytdlp(video_id: str, cookies_str: str = "") -> list[dict]:
                 "no_warnings": True,
             }
 
-            if cookies_str:
-                tf = tempfile.NamedTemporaryFile(
-                    suffix=".txt", delete=False, mode="w"
-                )
-                tf.write(cookies_str)
-                tf.close()
-                cookie_file = tf.name
-                ydl_opts["cookiefile"] = cookie_file
+            if effective_cookie_file:
+                ydl_opts["cookiefile"] = effective_cookie_file
+            if effective_proxy_url:
+                ydl_opts["proxy"] = effective_proxy_url
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
@@ -297,8 +353,8 @@ async def _fetch_via_ytdlp(video_id: str, cookies_str: str = "") -> list[dict]:
             return segments
 
         finally:
-            if cookie_file and os.path.exists(cookie_file):
-                os.unlink(cookie_file)
+            if owned_cookie_file and os.path.exists(owned_cookie_file):
+                os.unlink(owned_cookie_file)
             # Clean up downloaded subtitle files
             import shutil
             shutil.rmtree(outdir, ignore_errors=True)
@@ -309,6 +365,32 @@ async def _fetch_via_ytdlp(video_id: str, cookies_str: str = "") -> list[dict]:
 
 
 async def fetch_transcript(video_id: str) -> list[dict]:
+    """Fetch a transcript using one runtime-only cookie file for all clients."""
+    cookies_str = os.environ.get("YOUTUBE_COOKIES", "").strip()
+    cookie_file = _write_runtime_cookie_file(cookies_str)
+    cookies_fingerprint = (
+        hashlib.sha256(cookies_str.encode("utf-8")).hexdigest()
+        if cookies_str
+        else ""
+    )
+    try:
+        return await _fetch_transcript_with_config(
+            video_id,
+            cookie_file=cookie_file,
+            proxy_url=_get_proxy_url(),
+            cookies_fingerprint=cookies_fingerprint,
+        )
+    finally:
+        if cookie_file and os.path.exists(cookie_file):
+            os.unlink(cookie_file)
+
+
+async def _fetch_transcript_with_config(
+    video_id: str,
+    cookie_file: str | None,
+    proxy_url: str,
+    cookies_fingerprint: str,
+) -> list[dict]:
     """
     Fetch transcript as [{text, start, duration}].
 
@@ -327,7 +409,14 @@ async def fetch_transcript(video_id: str) -> list[dict]:
 
     ip_blocked = False
     transcripts_disabled = False
-    yta = _get_yta()
+    try:
+        yta = _get_yta(
+            cookie_file=cookie_file,
+            cookies_fingerprint=cookies_fingerprint,
+        )
+    except (OSError, http.cookiejar.LoadError):
+        # A malformed export should not prevent the no-cookie/proxy fallbacks.
+        yta = _get_yta()
 
     # ── 1. youtube-transcript-api (fast; uses proxy if configured) ────────────
     # Catches all exceptions broadly so any proxy/network failure falls through
@@ -373,7 +462,11 @@ async def fetch_transcript(video_id: str) -> list[dict]:
     # yt-dlp uses its own request stack which bypasses youtube-transcript-api's
     # proxy restrictions and handles YouTube's anti-bot measures better.
     try:
-        segs = await _fetch_via_ytdlp(video_id, cookies_str="")
+        segs = await _fetch_via_ytdlp(
+            video_id,
+            cookie_file=None,
+            proxy_url=proxy_url,
+        )
         if segs:
             return segs
     except ValueError as e:
@@ -383,10 +476,13 @@ async def fetch_transcript(video_id: str) -> list[dict]:
         pass
 
     # ── 3. yt-dlp WITH cookies (if YOUTUBE_COOKIES is set) ───────────────────
-    cookies_str = os.environ.get("YOUTUBE_COOKIES", "").strip()
-    if cookies_str:
+    if cookie_file:
         try:
-            segs = await _fetch_via_ytdlp(video_id, cookies_str=cookies_str)
+            segs = await _fetch_via_ytdlp(
+                video_id,
+                cookie_file=cookie_file,
+                proxy_url=proxy_url,
+            )
             if segs:
                 return segs
         except Exception:
