@@ -20,4 +20,5 @@ PORT = "23719"
 BASE_PATH = "/learntube-mobile/"
 
 [services.production]
-run = [ "sh", "-c", "exit 0" ]
+serve = "static"
+publicDir = "ai_youtube_learning_assistant/artifacts/learntube-mobile/production"

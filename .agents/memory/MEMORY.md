@@ -13,3 +13,4 @@
 - [Clerk proxy cookie — VITE_CLERK_PROXY_URL must be set or auto-detected](clerk-proxy-cookie.md) — Without proxyUrl, Clerk JS hits FAPI directly; cross-site cookies blocked → 401 on every auth step → blank /app
 - [Production startup debugging](production-startup-debug.md) — reload=False always; ONNX model must go in workspace; smoke test in build step to catch silent crashes; never hardcode PORT in run.env
 - [git push silent failure](git-push-silent-failure.md) — push without upstream tracking prints a hint but does NOT push; always verify origin/main advanced after push
+- [Multi-artifact publishing](multi-artifact-deployment.md) — Replit publishes all project artifacts together; mobile artifacts need a healthy production target or a separate project

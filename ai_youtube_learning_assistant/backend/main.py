@@ -104,6 +104,17 @@ app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
 app.include_router(library.router, prefix="/api/library", tags=["library"])
 
 
+@app.get("/")
+async def service_health():
+    """Return a fast response for the artifact service health probe.
+
+    The API artifact is mounted at /api by Replit, so its external
+    /api health check is forwarded to this service's root path.
+    """
+    return {"status": "ok", "service": "LearnTube API"}
+
+
+@app.get("/api")
 @app.get("/api/health")
 @app.get("/api/healthz")
 async def health():
