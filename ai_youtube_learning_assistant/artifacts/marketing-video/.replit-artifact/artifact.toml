@@ -3,6 +3,7 @@ previewPath = "/marketing-video"
 title = "LearnTube Marketing Video"
 version = "1.0.0"
 id = "artifacts/marketing-video"
+router = "path"
 
 [[services]]
 name = "web"
@@ -11,6 +12,15 @@ localPort = 22798
 
 [services.development]
 run = "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter marketing-video run dev"
+
+[services.production]
+build = [ "sh", "-c", "cd /home/runner/workspace/ai_youtube_learning_assistant && pnpm --filter marketing-video run build" ]
+serve = "static"
+publicDir = "ai_youtube_learning_assistant/artifacts/marketing-video/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
 
 [services.env]
 PORT = "22798"

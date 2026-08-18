@@ -61,6 +61,11 @@ pyproject.toml
 attached_assets/
 screenshots/
 
+# Local environment files — use Replit Secrets for deployed values
+.env
+.env.*
+!.env.example
+
 # ChromaDB ONNX model (downloaded at build time into workspace)
 .chroma_onnx/
 chroma_db/
