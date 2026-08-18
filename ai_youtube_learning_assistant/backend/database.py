@@ -34,14 +34,14 @@ class Video(Base):
 
 class UserVideo(Base):
     """
-    Ownership table: tracks which Clerk users have added which YouTube videos.
+    Ownership table: tracks which users or anonymous browsers have added videos.
     Video content (transcript, summary, quiz, flashcards) is shared across all
-    users who process the same YouTube video, but access is scoped per owner.
+    users or browsers who process the same YouTube video, but access is scoped per owner.
     """
     __tablename__ = "user_videos"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String, nullable=False, index=True)   # Clerk sub claim
+    user_id = Column(String, nullable=False, index=True)   # Clerk sub or anonymous browser ID
     video_id = Column(String, ForeignKey("videos.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -54,7 +54,7 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String, nullable=True, index=True)   # Clerk sub claim; nullable for migration compat
+    user_id = Column(String, nullable=True, index=True)   # User identity; nullable for migration compat
     video_id = Column(String, ForeignKey("videos.id"), nullable=False)
     role = Column(String, nullable=False)  # user | assistant
     content = Column(Text, nullable=False)

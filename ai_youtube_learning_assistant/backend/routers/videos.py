@@ -1,7 +1,8 @@
 """
 Video router — all /api/videos/* endpoints.
-All routes require authentication via Clerk JWT (require_auth dependency).
-User isolation is enforced via the UserVideo ownership table and per-user
+Routes accept Clerk JWTs when available and otherwise use the browser-local
+anonymous identity supplied by the frontend.
+Identity isolation is enforced via the UserVideo ownership table and per-user
 chat message filtering.
 """
 

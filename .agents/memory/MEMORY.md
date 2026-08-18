@@ -1,0 +1,15 @@
+- [LearnTube architecture](learntube-arch.md) — FastAPI backend at /api, React/Vite frontend at /, SQLite + ChromaDB, anonymous web access + optional Clerk
+- [Anonymous web access](anonymous-web-access.md) — web uses a browser-local identity header; backend still accepts Clerk JWTs for existing/mobile clients
+- [Gemini model deprecation](gemini-model-deprecation.md) — gemini-2.0-flash & 2.5-flash dead; use gemini-flash-lite-latest; GEMINI_MODEL env var set
+- [YouTube transcript from cloud IPs](yt-transcript-cloud.md) — yt-dlp native subtitle download (no cookies) works; WebshareProxy/datacenter still blocked
+- [ONNX model workspace path](onnx-model-workspace-path.md) — patch ONNXMiniLM_L6_V2.DOWNLOAD_PATH in vectorstore_service.py before chromadb imports
+- [pnpm workspace root](workspace-root.md) — workspace root is ai_youtube_learning_assistant/, not repo root; all pnpm commands must cd there first
+- [Clerk auth setup](clerk-auth-setup.md) — Replit-managed Clerk; PyJWT[crypto] installed via uv; proxy at /api/__clerk; JWT verification in backend/services/clerk_auth.py
+- [youtube-transcript-api v1.x breaking change](yt-transcript-api.md) — v1.x uses instance methods; get_transcript removed
+- [Python 3.13 type union syntax](py313-type-union.md) — X | None in module-level var annotations requires Optional[X] from typing
+- [Intent classifier training](intent-classifier.md) — sklearn TF-IDF + LogisticRegression, 85% accuracy, model at backend/models/intent_classifier/classifier.pkl
+- [Backend working directory for production](backend-cwd.md) — main.py must os.chdir to its own directory for relative paths to work in production
+- [Clerk proxy production domain fix](clerk-proxy-production.md) — Clerk proxy must use REPLIT_DOMAINS (not REPLIT_DEV_DOMAIN) for Clerk-Proxy-Url; wrong domain → 400 → blank page
+- [Clerk proxy cookie — VITE_CLERK_PROXY_URL must be set or auto-detected](clerk-proxy-cookie.md) — Without proxyUrl, Clerk JS hits FAPI directly; cross-site cookies blocked → 401 on every auth step → blank /app
+- [Production startup debugging](production-startup-debug.md) — reload=False always; ONNX model must go in workspace; smoke test in build step to catch silent crashes; never hardcode PORT in run.env
+- [git push silent failure](git-push-silent-failure.md) — push without upstream tracking prints a hint but does NOT push; always verify origin/main advanced after push

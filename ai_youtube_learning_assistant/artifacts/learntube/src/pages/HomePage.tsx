@@ -92,16 +92,16 @@ export function HomePage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setLocation("/sign-in")}
+            onClick={() => setLocation("/app")}
             className="btn-secondary px-5 py-2 rounded-xl text-sm font-semibold text-slate-200 transition-all duration-200"
           >
-            Sign in
+            Open workspace
           </button>
           <button
-            onClick={() => setLocation("/sign-up")}
+            onClick={() => setLocation("/app")}
             className="btn-primary px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200"
           >
-            Get started free
+            Start learning
           </button>
         </div>
       </nav>
@@ -136,18 +136,18 @@ export function HomePage() {
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => setLocation("/sign-up")}
+              onClick={() => setLocation("/app")}
               className="btn-primary flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-bold text-white transition-all duration-200 group"
             >
-              Start learning for free
+              Start learning now
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
-              onClick={() => setLocation("/sign-in")}
+              onClick={() => setLocation("/app")}
               className="btn-secondary flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-slate-200 transition-all duration-200"
             >
               <Play className="h-4 w-4 text-indigo-400" />
-              Sign in
+              Open workspace
             </button>
           </motion.div>
         </motion.div>
@@ -158,9 +158,9 @@ export function HomePage() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="mt-16 relative cursor-pointer group"
-          onClick={() => setLocation("/sign-up")}
+          onClick={() => setLocation("/app")}
           role="button"
-          aria-label="Try LearnTube for free"
+          aria-label="Open LearnTube workspace"
         >
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-indigo-500/20 to-transparent blur-2xl scale-110 group-hover:from-indigo-500/30 transition-all duration-300" />
           {/* Hover overlay CTA */}
@@ -513,22 +513,22 @@ export function HomePage() {
                 <span className="text-gradient">smarter?</span>
               </h2>
               <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-                Create your free account and transform any YouTube video into an interactive
-                learning session in seconds.
+                No account required. Transform any YouTube video into an interactive learning
+                session in seconds.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
-                  onClick={() => setLocation("/sign-up")}
+                  onClick={() => setLocation("/app")}
                   className="btn-primary flex items-center gap-2.5 px-8 py-4 rounded-2xl text-base font-bold text-white transition-all duration-200 group"
                 >
-                  Create free account
+                  Start learning
                   <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
-                  onClick={() => setLocation("/sign-in")}
+                  onClick={() => setLocation("/app")}
                   className="btn-secondary flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-slate-200 transition-all duration-200"
                 >
-                  Sign in
+                  Open workspace
                 </button>
               </div>
             </div>

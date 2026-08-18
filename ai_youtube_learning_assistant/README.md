@@ -17,8 +17,8 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 | 📝 **AI Summary** | Auto-generated overview, key points, and inferred chapters (Gemini Flash) |
 | ❓ **Quiz Generator** | 5–10 multiple-choice questions with explanations |
 | 🃏 **Flashcards** | 8–12 flip cards for spaced-repetition study |
-| 🔐 **Authentication** | Clerk-managed auth (Google OAuth + email/password + forgot password) |
-| 📚 **Video Library** | Per-user persistent library to revisit learning sessions |
+| 🚀 **Anonymous access** | Use the web app immediately without sign-in or sign-up |
+| 📚 **Video Library** | Browser-local library to revisit learning sessions |
 | 📱 **Mobile App** | Native Expo / React Native companion app for iOS & Android — full feature parity |
 
 ---
@@ -29,7 +29,7 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 ┌─────────────────────────────────────────────────────────────┐
 │  Web Frontend: React 18 + Vite (Tailwind CSS v4, shadcn/ui) │
 │  Mobile Frontend: Expo 53 / React Native 0.79               │
-│  Authentication: Clerk (JWT + Google OAuth) — web & mobile  │
+│  Identity: anonymous browser IDs on web; Clerk JWT support  │
 └──────────────────────────┬──────────────────────────────────┘
                            │ REST API (HTTPS)
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -58,7 +58,7 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 - React 18, Vite 6, TypeScript
 - Tailwind CSS v4, shadcn/ui, Radix UI
 - Framer Motion, TanStack Query, Wouter
-- Clerk (`@clerk/react`) for authentication
+- Browser-local anonymous identity for frictionless web access
 
 **Mobile App**
 - Expo 53, React Native 0.79, TypeScript
@@ -131,8 +131,7 @@ python main.py
 ```bash
 cd artifacts/learntube
 pnpm install
-# Set .env:
-# VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+# No sign-in configuration is required for the web app.
 pnpm dev
 ```
 
@@ -165,8 +164,8 @@ pnpm dev
 - ✅ Full RAG pipeline with timestamp citations
 - ✅ AI summary, quiz, and flashcard generation via Gemini JSON mode
 - ✅ Intent classifier with ~85% accuracy (scikit-learn TF-IDF + Logistic Regression)
-- ✅ Clerk authentication — Google OAuth + email/password + forgot-password (web & mobile)
-- ✅ Per-user video library with full CRUD
+- ✅ Anonymous web access — no sign-in or sign-up required
+- ✅ Browser-local video library with full CRUD
 - ✅ Production-quality animated UI (Tailwind CSS v4, Framer Motion, shadcn/ui)
 - ✅ Native mobile app — Expo 53 / React Native 0.79 for iOS & Android
 - ✅ Live deployment at [ai-you-tube-assistant.replit.app](https://ai-you-tube-assistant.replit.app)
@@ -178,9 +177,7 @@ pnpm dev
 | Fix | Detail |
 |-----|--------|
 | **Repo restructure** | All project files (`artifacts/`, `backend/`, `chroma_db/`) moved inside `ai_youtube_learning_assistant/`. `pnpm-workspace.yaml` and all `artifact.toml` / `tsconfig.json` paths updated accordingly. |
-| **Clerk session drop (production)** | Clerk proxy now works with any valid `CLERK_SECRET_KEY`; uses `REPLIT_DOMAINS` (not `REPLIT_DEV_DOMAIN`) for `Clerk-Proxy-Url` header. |
-| **Infinite spinner on `/app`** | `AppPage` shows a branded loading spinner while Clerk initialises; only redirects once `isLoaded=true`. |
-| **OAuth redirect** | `forceRedirectUrl` on `<SignIn>`/`<SignUp>` ensures post-OAuth lands on `/app` unconditionally. |
+| **Public web access** | Removed the web sign-in/sign-up gate. The browser workspace is available immediately and stores its library under a browser-local identity. |
 | **Production startup** | `run_server.sh` resolves Python at runtime via `readlink -f`; falls back to Nix-store glob. `reload=False` on uvicorn prevents file-watcher startup hang. |
 | **Summary stuck loading** | `GET /api/videos/{id}/summary` now builds the summary directly from stored ChromaDB chunks instead of re-fetching the transcript from YouTube. Eliminates the 60-second timeout and error. |
 | **Quiz & Flashcards** | Same fix as summary — both endpoints auto-generate from ChromaDB chunks on first request. |

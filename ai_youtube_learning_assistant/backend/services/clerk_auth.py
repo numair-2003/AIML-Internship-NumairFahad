@@ -8,16 +8,19 @@ from __future__ import annotations
 import json
 import os
 import logging
+import re
 from typing import Optional
 
 import httpx
 import jwt
 from jwt.algorithms import RSAAlgorithm
-from fastapi import Depends, HTTPException, Request
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
 CLERK_JWKS_URL = "https://api.clerk.com/v1/jwks"
+ANONYMOUS_ID_HEADER = "X-Anonymous-Id"
+ANONYMOUS_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 # Simple in-process JWKS cache (refreshed on import or on cache miss)
 _jwks_cache: Optional[dict] = None
@@ -102,8 +105,17 @@ async def get_current_user(request: Request) -> Optional[dict]:
 
 
 async def require_auth(request: Request) -> dict:
-    """FastAPI dependency — raises 401 if not authenticated."""
+    """Return a Clerk user or an anonymous browser identity.
+
+    Clerk sessions remain supported for existing clients, while the web app
+    can use the product without sign-in by sending a browser-local ID.
+    """
     claims = await get_current_user(request)
-    if not claims:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    return claims
+    if claims:
+        return claims
+
+    anonymous_id = request.headers.get(ANONYMOUS_ID_HEADER, "").strip()
+    if ANONYMOUS_ID_PATTERN.fullmatch(anonymous_id):
+        return {"sub": f"anonymous:{anonymous_id}"}
+
+    return {"sub": "anonymous:default"}

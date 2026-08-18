@@ -1,5 +1,15 @@
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const API = `${BASE}/api`;
+const ANONYMOUS_ID_KEY = "learntube-anonymous-id";
+
+function getAnonymousId(): string {
+  const stored = window.localStorage.getItem(ANONYMOUS_ID_KEY);
+  if (stored) return stored;
+
+  const id = crypto.randomUUID();
+  window.localStorage.setItem(ANONYMOUS_ID_KEY, id);
+  return id;
+}
 
 async function req<T>(
   method: string,
@@ -8,7 +18,10 @@ async function req<T>(
 ): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     method,
-    headers: body ? { "Content-Type": "application/json" } : {},
+    headers: {
+      "X-Anonymous-Id": getAnonymousId(),
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {

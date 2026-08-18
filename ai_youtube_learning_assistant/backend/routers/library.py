@@ -11,7 +11,7 @@ async def get_library(
     db: Session = Depends(get_db),
     user: dict = Depends(require_auth),
 ):
-    """Return all videos belonging to the authenticated user, newest first."""
+    """Return videos belonging to the current user or anonymous browser, newest first."""
     user_id: str = user["sub"]
 
     videos = (
@@ -39,7 +39,7 @@ async def remove_from_library(
     db: Session = Depends(get_db),
     user: dict = Depends(require_auth),
 ):
-    """Remove a video from the authenticated user's library (deletes UserVideo row)."""
+    """Remove a video from the current user's library (deletes UserVideo row)."""
     user_id: str = user["sub"]
 
     row = (
