@@ -22,3 +22,6 @@ BASE_PATH = "/learntube-mobile/"
 [services.production]
 serve = "static"
 publicDir = "ai_youtube_learning_assistant/artifacts/learntube-mobile/production"
+
+[services.production.health.startup]
+path = "/learntube-mobile/"

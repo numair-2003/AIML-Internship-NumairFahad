@@ -1,0 +1,36 @@
+modules = ["nodejs-24", "python-base-3.13"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "ai_youtube_learning_assistant/artifacts/learntube: web"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
+
+[userenv]
+
+[userenv.shared]
+CHROMA_PERSIST_DIR = "./chroma_db"
+GEMINI_MODEL = "gemini-flash-lite-latest"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+INTENT_MODEL_PATH = "./models/intent_classifier"
+SQLITE_DB_PATH = "./app.db"
+
+[userenv.production]
+CLERK_PROXY_HOST = "ai-you-tube-assistant.replit.app"
+
+[nix]
+channel = "stable-25_05"
+packages = ["freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]

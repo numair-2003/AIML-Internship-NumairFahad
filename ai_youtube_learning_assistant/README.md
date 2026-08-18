@@ -28,7 +28,7 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Web Frontend: React 18 + Vite (Tailwind CSS v4, shadcn/ui) │
-│  Mobile Frontend: Expo 53 / React Native 0.79               │
+│  Mobile Frontend: Expo 54 / React Native 0.81               │
 │  Identity: anonymous browser IDs on web; Clerk JWT support  │
 └──────────────────────────┬──────────────────────────────────┘
                            │ REST API (HTTPS)
@@ -61,7 +61,7 @@ LearnTube transforms any YouTube video into a complete, interactive learning exp
 - Browser-local anonymous identity for frictionless web access
 
 **Mobile App**
-- Expo 53, React Native 0.79, TypeScript
+- Expo 54, React Native 0.81, TypeScript
 - Expo Router, Expo Go (scan QR to run on device)
 - Clerk (`@clerk/expo`) for native authentication
 
@@ -101,9 +101,9 @@ ai_youtube_learning_assistant/   ← this folder (monorepo root symlink)
 │           ├── QuizPanel.tsx
 │           └── FlashcardPanel.tsx
 ├── artifacts/learntube-mobile/  ← Expo / React Native mobile app
-│   └── src/
-│       ├── app/                 # Expo Router screens
-│       └── components/
+│   └── app/
+│       ├── (home)/              # Expo Router screens
+│   └── components/              # Shared mobile UI components
 ├── LearnTube_Project_Report.pdf ← Full project report
 └── scripts/
     └── generate_report.py       # Regenerates the PDF report
@@ -148,6 +148,46 @@ pnpm install
 pnpm dev
 # Scan the QR code with Expo Go (iOS/Android)
 ```
+
+### Replit Preview and Health Checks
+
+This repository is a pnpm monorepo rooted at `ai_youtube_learning_assistant/`.
+The Replit-managed workflows are:
+
+| Surface | Preview path | Health/check behavior |
+|---------|--------------|-----------------------|
+| LearnTube web | `/` | Vite HTML app |
+| Marketing video | `/marketing-video/` | Vite HTML app |
+| Mobile web bundle | `/learntube-mobile/` | Expo web HTML bundle |
+| FastAPI backend | `/api` | `/api/healthz` returns immediate JSON |
+
+The API health response is intentionally independent of SQLite, ChromaDB, ONNX,
+YouTube, and Gemini so Replit startup probes can respond while optional services
+finish loading. The production API entrypoint always uses `reload=False`.
+
+The normal project preview paths serve the web and mobile web bundles. The
+special `*.expo.pike.replit.dev` address is Expo's native development/status
+domain and may display plain-text `Running`; use its QR code with Expo Go for
+native iOS/Android testing.
+
+To run the web app locally from the monorepo root:
+
+```bash
+cd ai_youtube_learning_assistant
+pnpm --filter @workspace/learntube run dev
+```
+
+To run the backend locally:
+
+```bash
+cd ai_youtube_learning_assistant/backend
+python main.py
+```
+
+For publishing, use Replit's **Publish** action after verifying the managed
+workflows are running. Replit publishes the registered artifacts together; the
+mobile artifact has a static production entry page and an explicit
+`/learntube-mobile/` startup health path so it does not block a web publish.
 
 ---
 
@@ -194,6 +234,8 @@ pnpm dev
 | **Background summary uses ChromaDB** | `process_video` background summary task now reads already-stored chunks from ChromaDB instead of re-fetching from YouTube — faster and works without a proxy. |
 | **ONNX model path (production fix)** | `vectorstore_service.py` patches `ONNXMiniLM_L6_V2.DOWNLOAD_PATH` at import time, directing the 90 MB embedding model into `backend/.chroma_onnx/` (included in the container image) instead of `~/.cache/` (wiped on deploy). |
 | **yt-dlp added** | Added `yt-dlp>=2026.7.4` to `pyproject.toml` for cloud-safe transcript fallback (works without cookies). |
+| **Artifact preview routing** | The default Replit Run button targets the existing LearnTube web workflow; web, marketing, mobile-web, and API paths are routed to their managed services instead of the generic `Running` response. |
+| **Mobile production health** | The Expo mobile artifact serves a static entry page in production and explicitly checks `/learntube-mobile/` during startup. |
 
 ---
 
