@@ -10,7 +10,7 @@ Hello everyone! I am **Numair Fahad**, a BSCS undergraduate at the **National Un
 
 🌐 **Live App:** [ai-you-tube-assistant.replit.app](https://ai-you-tube-assistant.replit.app)
 📁 **Project Folder:** [`ai_youtube_learning_assistant/`](./ai_youtube_learning_assistant/)
-📄 **Project Report:** [`LearnTube_Project_Report.pdf`](./LearnTube_Project_Report.pdf)
+📄 **Project Report:** [`LearnTube_Project_Report.pdf`](./ai_youtube_learning_assistant/LearnTube_Project_Report.pdf)
 
 LearnTube transforms any YouTube video into an interactive learning experience — paste a URL and instantly get an AI-generated summary, quiz, flashcards, and a context-aware chat assistant grounded in the video transcript. Available on web and as a native iOS/Android app.
 
